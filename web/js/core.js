@@ -278,15 +278,18 @@ export const PixelFont = {
 };
 
 // ---------------------------------------------------------------- entrada
-// Mapeamento equivalente ao NES: jump = A, run = B (correr / atirar).
+// Mapeamento equivalente ao NES: jump = A, run = B (correr), fire = B (atirar com o Firewall).
+// A seta para cima tambem pula. No celular, correr e atirar sao gestos diferentes (veja main.js).
 const KEYMAP = {
   left: ['ArrowLeft', 'KeyA'], right: ['ArrowRight', 'KeyD'], up: ['ArrowUp', 'KeyW'], down: ['ArrowDown', 'KeyS'],
-  jump: ['KeyZ', 'Space', 'KeyK'], run: ['KeyX', 'ShiftLeft', 'ShiftRight', 'KeyJ'],
+  jump: ['KeyZ', 'Space', 'KeyK', 'ArrowUp', 'KeyW'], run: ['KeyX', 'ShiftLeft', 'ShiftRight', 'KeyJ'],
+  fire: ['KeyX', 'ShiftLeft', 'ShiftRight', 'KeyJ', 'KeyC'],
   start: ['Enter', 'KeyP'], confirm: ['Enter', 'KeyZ', 'Space'], back: ['Escape', 'Backspace'],
 };
 // Botoes do controle no layout "standard" do navegador (0 = A, 1 = B, 2 = X, 3 = Y, 8 = Select, 9 = Start).
 const PADMAP = {
-  left: [14], right: [15], up: [12], down: [13], jump: [0], run: [2, 3], start: [9], confirm: [0, 9], back: [1, 8],
+  left: [14], right: [15], up: [12], down: [13], jump: [0, 12], run: [2, 3], fire: [2, 3],
+  start: [9], confirm: [0, 9], back: [1, 8],
 };
 const BLOCKED_KEYS = new Set(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Space', 'Backspace']);
 
@@ -327,7 +330,7 @@ export const Input = {
         if (!down && pad.axes.length >= 2) {
           if (action === 'left') down = pad.axes[0] < -0.5;
           if (action === 'right') down = pad.axes[0] > 0.5;
-          if (action === 'up') down = pad.axes[1] < -0.5;
+          if (action === 'up' || action === 'jump') down = pad.axes[1] < -0.6;
           if (action === 'down') down = pad.axes[1] > 0.5;
         }
       }

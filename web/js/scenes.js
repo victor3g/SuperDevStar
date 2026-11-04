@@ -40,18 +40,41 @@ export const Hud = {
 const MENU = ['INICIAR JOGO', 'CONTROLES'];
 const CONTROLS = [
   'MOVER ............ SETAS / A D',
-  'PULAR ............ Z / ESPACO',
+  'PULAR ............ Z / ESPACO / CIMA',
   'CORRER / ATIRAR .. X / SHIFT',
   'AGACHAR / CANO ... SETA BAIXO',
   'PAUSA ............ ENTER',
   'TELA CHEIA ....... F',
   'SOM LIGA/DESLIGA . M',
   '',
-  'CONTROLE: A PULA, X CORRE',
-  'CELULAR: BOTOES NA TELA',
+  'CONTROLE: A PULA, X CORRE/ATIRA',
 ];
+const TOUCH_CONTROLS = [
+  'LADO ESQUERDO DA TELA:',
+  ' ARRASTE PARA ANDAR',
+  ' ARRASTE MAIS LONGE = CORRER',
+  ' PARA CIMA = PULAR',
+  ' PARA BAIXO = AGACHAR / CANO',
+  'LADO DIREITO DA TELA:',
+  ' TOQUE = PULAR (SEGURE = ALTO)',
+  ' DESLIZE = LANCAR PACOTE',
+  'TOQUE NO PLACAR = PAUSA',
+];
+const MENU_Y = 128, MENU_STEP = 16;
 
 export class TitleScene extends Scene {
+  confirm() {
+    Audio.play('menu_select');
+    if (this.cursor === 0) this.game.changeScene(new CharacterSelectScene(this.game));
+    else this.showControls = true;
+  }
+  /** Toque: no item do menu escolhe ele; em qualquer outro lugar confirma o item atual. */
+  onTap(x, y) {
+    if (this.showControls) { this.showControls = false; return; }
+    const i = Math.floor((y - MENU_Y + 4) / MENU_STEP);
+    if (i >= 0 && i < MENU.length && x > 60 && x < 200) this.cursor = i;
+    this.confirm();
+  }
   enter() {
     this.cursor = 0;
     this.frame = 0;
@@ -69,11 +92,7 @@ export class TitleScene extends Scene {
     }
     if (Input.wasPressed('up')) { this.cursor = (this.cursor + MENU.length - 1) % MENU.length; Audio.play('menu_move'); }
     if (Input.wasPressed('down')) { this.cursor = (this.cursor + 1) % MENU.length; Audio.play('menu_move'); }
-    if (Input.wasPressed('confirm')) {
-      Audio.play('menu_select');
-      if (this.cursor === 0) this.game.changeScene(new CharacterSelectScene(this.game));
-      else this.showControls = true;
-    }
+    if (Input.wasPressed('confirm')) this.confirm();
   }
   draw(ctx) {
     if (this.background) ctx.drawImage(this.background, 0, 0, VW, VH, 0, 0, VW, VH);
@@ -91,10 +110,10 @@ export class TitleScene extends Scene {
     if (this.showControls) {
       Gfx.rect(ctx, 12, 104, VW - 24, 120, [0, 0, 0, 200]);
       Gfx.outline(ctx, 12, 104, VW - 24, 120, WHITE);
-      CONTROLS.forEach((line, i) => PixelFont.draw(ctx, line, 22, 110 + i * 11, WHITE));
+      (this.game.touch ? TOUCH_CONTROLS : CONTROLS).forEach((line, i) => PixelFont.draw(ctx, line, 20, 110 + i * 11, WHITE));
     } else {
       MENU.forEach((item, i) => {
-        const y = 128 + i * 16;
+        const y = MENU_Y + i * MENU_STEP;
         PixelFont.draw(ctx, item, 88, y, WHITE, 1, true);
         if (i === this.cursor && Math.floor(this.frame / 16) % 2 === 0) PixelFont.draw(ctx, '>', 76, y, YELLOW, 1, true);
       });
@@ -105,43 +124,98 @@ export class TitleScene extends Scene {
 }
 
 // =====================================================================
-// Selecao de personagem
+// Selecao de personagem + perfil
 // =====================================================================
 const COLUMNS = 4, CARD = 52, CARD_GAP = 8;
+const GRAY = [150, 150, 170, 255], CYAN = [120, 220, 255, 255], SOFT = [200, 200, 210, 255];
+const PLAY_BTN = { x: 52, y: 208, w: 64, h: 16 }, BACK_BTN = { x: 140, y: 208, w: 64, h: 16 };
+const inside = (b, x, y) => x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h;
+/** Frases tipicas entre aspas: "Na minha maquina funciona!" "Ai e mais caro!" */
+const quoteText = c => c.quotes.map(q => `"${q}"`).join(' ');
 
 export class CharacterSelectScene extends Scene {
   enter() {
     this.chars = this.game.characters.list;
     this.cursor = 0;
     this.frame = 0;
+    this.profile = false;       // mostrando o perfil completo do personagem escolhido
     this.background = Assets.image('UI/select_background.png');
     Audio.playMusic('select');
   }
   get slotCount() { return Math.max(this.game.characters.selectSlots, this.chars.length); }
   at(slot) { return slot < this.chars.length ? this.chars[slot] : null; }
+  playable(c) { return c && c.enabled; }
+
+  // ---------------- layout das cartas
+  cardRect(slot) {
+    const n = this.slotCount;
+    const cols = Math.min(COLUMNS, n), rows = Math.ceil(n / COLUMNS);
+    const startX = Math.floor((VW - (cols * CARD + (cols - 1) * CARD_GAP)) / 2);
+    const rowH = rows > 1 ? CARD + 4 : CARD + 14;
+    return { x: startX + (slot % COLUMNS) * (CARD + CARD_GAP), y: 34 + Math.floor(slot / COLUMNS) * rowH, w: CARD, h: CARD };
+  }
+  get infoTop() {
+    const rows = Math.ceil(this.slotCount / COLUMNS);
+    return Math.max(106, 34 + rows * (rows > 1 ? CARD + 4 : CARD + 14) + 4);
+  }
+
+  // ---------------- acoes
+  move(delta) {
+    const n = this.slotCount;
+    const before = this.cursor;
+    this.cursor = Math.min(n - 1, Math.max(0, this.cursor + delta));
+    if (before !== this.cursor) Audio.play('menu_move');
+  }
+  choose() {
+    const c = this.at(this.cursor);
+    if (!this.playable(c)) { Audio.play('bump'); return; }
+    Audio.play('menu_select');
+    this.profile = true;
+  }
+  play() {
+    const c = this.at(this.cursor);
+    Audio.play('menu_select');
+    this.game.session = new GameSession(c);
+    this.game.changeScene(new LevelIntroScene(this.game, LevelManager.first));
+  }
 
   update() {
     this.frame++;
-    const before = this.cursor, n = this.slotCount;
-    if (Input.wasPressed('left')) this.cursor = (this.cursor + n - 1) % n;
-    if (Input.wasPressed('right')) this.cursor = (this.cursor + 1) % n;
-    if (Input.wasPressed('up') && this.cursor - COLUMNS >= 0) this.cursor -= COLUMNS;
-    if (Input.wasPressed('down') && this.cursor + COLUMNS < n) this.cursor += COLUMNS;
-    if (before !== this.cursor) Audio.play('menu_move');
-    if (Input.wasPressed('back')) { this.game.changeScene(new TitleScene(this.game)); return; }
-    if (Input.wasPressed('confirm')) {
-      const c = this.at(this.cursor);
-      if (!c || !c.enabled) { Audio.play('bump'); return; }
-      Audio.play('menu_select');
-      this.game.session = new GameSession(c);
-      this.game.changeScene(new LevelIntroScene(this.game, LevelManager.first));
+    if (this.profile) {
+      if (Input.wasPressed('confirm')) this.play();
+      else if (Input.wasPressed('back')) { this.profile = false; Audio.play('menu_move'); }
+      return;
     }
+    if (Input.wasPressed('left')) this.move(-1);
+    if (Input.wasPressed('right')) this.move(1);
+    if (Input.wasPressed('up') && this.cursor - COLUMNS >= 0) this.move(-COLUMNS);
+    if (Input.wasPressed('down') && this.cursor + COLUMNS < this.slotCount) this.move(COLUMNS);
+    if (Input.wasPressed('back')) { this.game.changeScene(new TitleScene(this.game)); return; }
+    if (Input.wasPressed('confirm')) this.choose();
   }
 
-  draw(ctx) {
+  /** Toque: na carta seleciona; tocar de novo na mesma abre o perfil. */
+  onTap(x, y) {
+    if (this.profile) {
+      if (inside(PLAY_BTN, x, y)) this.play();
+      else if (inside(BACK_BTN, x, y)) { this.profile = false; Audio.play('menu_move'); }
+      return;
+    }
+    for (let i = 0; i < this.slotCount; i++) {
+      if (!inside(this.cardRect(i), x, y)) continue;
+      if (i === this.cursor) this.choose();
+      else { this.cursor = i; Audio.play('menu_move'); }
+      return;
+    }
+    if (y > VH - 18) { this.game.changeScene(new TitleScene(this.game)); return; }   // "VOLTAR" no rodape
+    if (y >= this.infoTop) this.choose();
+  }
+  onSwipe(dir) { if (!this.profile) this.move(dir); }
+
+  // ---------------- desenho
+  drawBackground(ctx) {
     if (this.background) ctx.drawImage(this.background, 0, 0);
     else {
-      // Fundo "terminal": azul escuro com grade.
       Gfx.rect(ctx, 0, 0, VW, VH, [11, 16, 38, 255]);
       const grid = [30, 50, 90, 255];
       for (let x = 0; x < VW; x += 16) Gfx.rect(ctx, x, 0, 1, VH, grid);
@@ -149,22 +223,22 @@ export class CharacterSelectScene extends Scene {
       // O select_background.png ja traz o titulo desenhado no topo.
       PixelFont.drawCentered(ctx, 'ESCOLHA SEU DEV', VW / 2, 10, YELLOW, 2, true);
     }
-    const n = this.slotCount;
-    const cols = Math.min(COLUMNS, n), rows = Math.ceil(n / COLUMNS);
-    const startX = Math.floor((VW - (cols * CARD + (cols - 1) * CARD_GAP)) / 2), startY = 34;
-    const rowH = rows > 1 ? CARD + 4 : CARD + 14;
-    for (let i = 0; i < n; i++) {
-      this.drawCard(ctx, i, startX + (i % COLUMNS) * (CARD + CARD_GAP), startY + Math.floor(i / COLUMNS) * rowH);
-    }
-    this.drawInfo(ctx, Math.max(106, startY + rows * rowH + 4));
-    PixelFont.drawCentered(ctx, '< > ESCOLHER   ENTER OK   ESC VOLTAR', VW / 2, VH - 12, WHITE);
   }
 
-  drawCard(ctx, slot, x, y) {
+  draw(ctx) {
+    this.drawBackground(ctx);
+    if (this.profile) { this.drawProfile(ctx, this.at(this.cursor)); return; }
+    for (let i = 0; i < this.slotCount; i++) this.drawCard(ctx, i, this.cardRect(i));
+    this.drawInfo(ctx, this.infoTop);
+    const hint = this.game.touch ? 'TOQUE NA CARTA: PERFIL        < VOLTAR' : '< > ESCOLHER   ENTER PERFIL   ESC VOLTAR';
+    PixelFont.drawCentered(ctx, hint, VW / 2, VH - 12, WHITE);
+  }
+
+  drawCard(ctx, slot, r) {
     const c = this.at(slot), selected = slot === this.cursor;
-    Gfx.rect(ctx, x, y, CARD, CARD, [20, 28, 60, 255]);
-    const ix = x + 2, iy = y + 2, iw = CARD - 4, ih = CARD - 4;
-    if (!c) {
+    Gfx.rect(ctx, r.x, r.y, r.w, r.h, [20, 28, 60, 255]);
+    const ix = r.x + 2, iy = r.y + 2, iw = r.w - 4, ih = r.h - 4;
+    if (!this.playable(c)) {
       Gfx.rect(ctx, ix, iy, iw, ih, [30, 30, 40, 255]);
       PixelFont.drawCentered(ctx, '?', ix + iw / 2, iy + 10, [90, 90, 110, 255], 3);
       PixelFont.drawCentered(ctx, 'EM BREVE', ix + iw / 2, iy + ih - 10, [120, 120, 140, 255]);
@@ -176,8 +250,8 @@ export class CharacterSelectScene extends Scene {
       PixelFont.drawCentered(ctx, c.name.slice(0, 6), ix + iw / 2, iy + ih - 9, WHITE, 1, true);
     }
     const border = selected ? (Math.floor(this.frame / 8) % 2 === 0 ? YELLOW : WHITE) : [80, 90, 130, 255];
-    Gfx.outline(ctx, x, y, CARD, CARD, border, selected ? 2 : 1);
-    if (selected) PixelFont.drawCentered(ctx, 'V', x + CARD / 2, y - 9 + Math.floor(this.frame / 10) % 2, YELLOW);
+    Gfx.outline(ctx, r.x, r.y, r.w, r.h, border, selected ? 2 : 1);
+    if (selected) PixelFont.drawCentered(ctx, 'V', r.x + r.w / 2, r.y - 9 + Math.floor(this.frame / 10) % 2, YELLOW);
   }
 
   drawInfo(ctx, top) {
@@ -185,28 +259,83 @@ export class CharacterSelectScene extends Scene {
     Gfx.rect(ctx, px, top, pw, ph, [0, 0, 0, 170]);
     Gfx.outline(ctx, px, top, pw, ph, [80, 90, 130, 255]);
     const c = this.at(this.cursor);
-    const gray = [150, 150, 170, 255];
-    if (!c) {
-      PixelFont.drawCentered(ctx, 'SLOT VAZIO', px + pw / 2, top + 20, gray);
-      PixelFont.drawCentered(ctx, 'ADICIONE O PERSONAGEM EM', px + pw / 2, top + 40, gray);
-      PixelFont.drawCentered(ctx, 'CHARACTERS.JSON', px + pw / 2, top + 52, gray);
+    if (!this.playable(c)) {
+      PixelFont.drawCentered(ctx, 'NOVO DEV CHEGANDO', px + pw / 2, top + 24, GRAY);
+      PixelFont.drawCentered(ctx, 'EM BREVE NO TIME!', px + pw / 2, top + 40, GRAY);
       return;
     }
     // Preview animado andando (versao grande). Celulas de 32 px tem o corpo no meio.
     const previewX = px + 12 - (c.big.fw - 16);
     c.big.draw(ctx, WALK_CYCLE[Math.floor(this.frame / 7) % WALK_CYCLE.length], previewX, top + 12, { scale: 2 });
-    const tx = Math.max(px + 56, previewX + c.big.fw * 2 + 6);
+    const tx = Math.max(px + 56, previewX + c.big.fw * 2 + 6), maxW = px + pw - tx - 6;
     let y = top + 8;
     PixelFont.draw(ctx, c.name, tx, y, YELLOW, 1, true);
     y += 12;
     if (c.role) { PixelFont.draw(ctx, c.role, tx, y, WHITE); y += 10; }
-    if (c.stack) { PixelFont.draw(ctx, 'STACK: ' + c.stack, tx, y, [120, 220, 255, 255]); y += 10; }
+    if (c.stack) { PixelFont.draw(ctx, 'STACK: ' + c.stack, tx, y, CYAN); y += 10; }
     y += 4;
-    for (const line of PixelFont.wrap(c.description, px + pw - tx - 6)) {
-      if (y > top + ph - 10) break;
-      PixelFont.draw(ctx, line, tx, y, [200, 200, 210, 255]);
-      y += 10;
+    y = this.drawStats(ctx, c, tx, y, 3);
+    if (c.quotes.length) {
+      y += 2;
+      for (const line of PixelFont.wrap(quoteText(c), maxW).slice(0, 2)) { PixelFont.draw(ctx, line, tx, y, SOFT); y += 10; }
     }
+  }
+
+  /** Barras de atributos (0 a 5). Rotulos de ate 10 letras. */
+  drawStats(ctx, c, x, y, maxLines = 4, lineH = 10) {
+    for (const s of (c.stats ?? []).slice(0, maxLines)) {
+      PixelFont.draw(ctx, s.label, x, y, SOFT);
+      const bx = x + 64;
+      for (let i = 0; i < 5; i++) Gfx.rect(ctx, bx + i * 9, y, 7, 7, i < s.value ? YELLOW : [50, 55, 80, 255]);
+      y += lineH;
+    }
+    return y;
+  }
+
+  drawProfile(ctx, c) {
+    Gfx.rect(ctx, 6, 26, VW - 12, VH - 30, [0, 0, 0, 200]);
+    Gfx.outline(ctx, 6, 26, VW - 12, VH - 30, [80, 120, 200, 255]);
+    // retrato
+    const PORTRAIT = 72;
+    if (c.portrait) ctx.drawImage(c.portrait, 14, 34, PORTRAIT, PORTRAIT);
+    else c.big.draw(ctx, Frame.Idle, 14 + PORTRAIT / 2 - c.big.fw, 34, { scale: 2 });
+    Gfx.outline(ctx, 13, 33, PORTRAIT + 2, PORTRAIT + 2, CYAN);
+    // nome, cargo, stack e atributos ao lado do retrato
+    const tx = 14 + PORTRAIT + 8, maxW = VW - 14 - tx;
+    PixelFont.draw(ctx, c.name, tx, 34, YELLOW, PixelFont.measure(c.name, 2) <= maxW ? 2 : 1, true);
+    let y = 52;
+    PixelFont.draw(ctx, PixelFont.wrap(c.role, maxW)[0] ?? '', tx, y, WHITE); y += 10;
+    if (c.stack) { PixelFont.draw(ctx, PixelFont.wrap(c.stack, maxW)[0], tx, y, CYAN); y += 10; }
+    y = this.drawStats(ctx, c, tx, y + 3, 4, 9);
+    // textos do perfil (largura toda, abaixo do retrato)
+    y = Math.max(y + 3, 34 + PORTRAIT + 6);
+    const left = 14, width = VW - 28, LINE = 9;
+    const LAST_LINE_Y = 196;   // abaixo disso ficam os botoes
+    const block = (label, text, color, maxLines) => {
+      if (!text || y > LAST_LINE_Y) return;
+      const lines = PixelFont.wrap(label ? `${label} ${text}` : text, width).slice(0, maxLines);
+      for (let i = 0; i < lines.length && y <= LAST_LINE_Y; i++) {
+        const line = lines[i];
+        if (i === 0 && label) {
+          PixelFont.draw(ctx, label, left, y, YELLOW);
+          PixelFont.draw(ctx, line.slice(label.length), left + PixelFont.measure(label) + 1, y, color);
+        } else PixelFont.draw(ctx, line, left, y, color);
+        y += LINE;
+      }
+      y += 2;
+    };
+    block('SUPERPODER:', c.superpower, WHITE, 2);
+    block('PONTO FRACO:', c.weakness, WHITE, 2);
+    block('', c.description, SOFT, 3);
+    if (c.quotes.length) block('', quoteText(c), CYAN, 2);
+    // botoes
+    const blink = Math.floor(this.frame / 12) % 2 === 0;
+    for (const [b, label, on] of [[PLAY_BTN, 'JOGAR', true], [BACK_BTN, 'VOLTAR', false]]) {
+      Gfx.rect(ctx, b.x, b.y, b.w, b.h, on ? [30, 90, 40, 255] : [40, 40, 60, 255]);
+      Gfx.outline(ctx, b.x, b.y, b.w, b.h, on && blink ? YELLOW : WHITE);
+      PixelFont.drawCentered(ctx, label, b.x + b.w / 2, b.y + 5, WHITE);
+    }
+    if (!this.game.touch) PixelFont.drawCentered(ctx, 'ENTER JOGAR   ESC VOLTAR', VW / 2, 228, GRAY);
   }
 }
 
@@ -276,10 +405,48 @@ export class GameplayScene extends Scene {
     this.hurry = false;
     this.timeUp = false;
     this.warp = null;
+    this.hint = null;          // { text, timer } mensagem curta no topo da tela
+    this.lastPower = null;
+    // Trocou de app / aba: pausa sozinho.
+    this.onVisibility = () => { if (document.hidden && this.state === 'playing') this.pause(); };
   }
   get session() { return this.game.session; }
+  get isGameplay() { return true; }
+  get paused() { return this.state === 'paused'; }
+
+  pause() {
+    this.state = 'paused';
+    Audio.pauseMusic();
+    Audio.play('pause');
+  }
+  resume() {
+    this.state = 'playing';
+    Audio.resumeMusic();
+    Audio.play('pause');
+  }
+  /** Toque com o jogo pausado: "MENU PRINCIPAL" volta ao titulo; qualquer outro lugar continua. */
+  onTap(x, y) {
+    if (!this.paused) return;
+    if (y >= 136 && y <= 152) { Audio.stopMusic(); this.game.changeScene(new TitleScene(this.game)); }
+    else this.resume();
+  }
+  showHint(text, frames = 240) { this.hint = { text, timer: frames }; }
+
+  /** Avisos quando o poder muda (o do Firewall ensina a atirar). */
+  checkPowerHints() {
+    const p = this.player;
+    if (this.lastPower !== null && p.power > this.lastPower) {
+      if (p.power === PowerState.Fire) {
+        this.showHint(this.game.touch ? 'FIREWALL! DESLIZE O DEDO PARA ATIRAR' : 'FIREWALL! APERTE X PARA ATIRAR', 300);
+      } else if (p.power === PowerState.Big) this.showHint('CAFE! AGORA VOCE E SENIOR');
+    }
+    this.lastPower = p.power;
+  }
+
+  exit() { document.removeEventListener('visibilitychange', this.onVisibility); }
 
   enter() {
+    document.addEventListener('visibilitychange', this.onVisibility);
     this.time = this.level.time;
     this.player = new Player(this.session.character, this.session.power);
     this.stage = this.getStage(this.level.startArea);
@@ -305,17 +472,17 @@ export class GameplayScene extends Scene {
 
   update() {
     if (this.state === 'paused') {
-      if (Input.wasPressed('start')) { this.state = 'playing'; Audio.resumeMusic(); Audio.play('pause'); }
+      if (Input.wasPressed('start')) this.resume();
       else if (Input.wasPressed('back')) { Audio.stopMusic(); this.game.changeScene(new TitleScene(this.game)); }
       return;
     }
+    if (this.hint && --this.hint.timer <= 0) this.hint = null;
     if (this.state === 'warping') { this.updateWarp(); return; }
     if (this.state === 'playing' && (Input.wasPressed('start') || Input.wasPressed('back'))) {
-      this.state = 'paused';
-      Audio.pauseMusic();
-      Audio.play('pause');
+      this.pause();
       return;
     }
+    this.checkPowerHints();
 
     const p = this.player;
     const frozen = p.mode === 'growing' || p.mode === 'shrinking' || p.mode === 'dying';
@@ -476,7 +643,10 @@ export class GameplayScene extends Scene {
     Audio.play('die');
     this.state = 'dying';
   }
-  onStarCollected() { Audio.playMusic('star'); }
+  onStarCollected() {
+    Audio.playMusic('star');
+    this.showHint('SUDO STAR: MODO ROOT ATIVADO!', 180);
+  }
   onStarEnded() {
     Audio.playMusic(this.stage.data.music);
     if (this.hurry) Audio.setMusicSpeed(1.25);
@@ -488,11 +658,21 @@ export class GameplayScene extends Scene {
     if (black) Gfx.rect(ctx, 0, 0, VW, VH, BLACK);
     else this.stage.draw(ctx, this.game.debug);
     Hud.draw(ctx, this.session, this.level.world, this.time, this.stage.frameCounter);
+    if (this.hint && Math.floor(this.hint.timer / 20) % 4 !== 0) {
+      Gfx.rect(ctx, 0, 32, VW, 13, [0, 0, 0, 150]);
+      PixelFont.drawCentered(ctx, this.hint.text, VW / 2, 35, YELLOW, 1, true);
+    }
     if (this.state === 'paused') {
       Gfx.rect(ctx, 0, 0, VW, VH, [0, 0, 0, 140]);
       PixelFont.drawCentered(ctx, 'PAUSA', VW / 2, 100, WHITE, 2, true);
-      PixelFont.drawCentered(ctx, 'ENTER - CONTINUAR', VW / 2, 130, WHITE);
-      PixelFont.drawCentered(ctx, 'ESC - MENU PRINCIPAL', VW / 2, 142, WHITE);
+      if (this.game.touch) {
+        PixelFont.drawCentered(ctx, 'TOQUE PARA CONTINUAR', VW / 2, 124, WHITE);
+        Gfx.outline(ctx, 66, 137, 124, 14, WHITE);
+        PixelFont.drawCentered(ctx, 'MENU PRINCIPAL', VW / 2, 141, WHITE);
+      } else {
+        PixelFont.drawCentered(ctx, 'ENTER - CONTINUAR', VW / 2, 130, WHITE);
+        PixelFont.drawCentered(ctx, 'ESC - MENU PRINCIPAL', VW / 2, 142, WHITE);
+      }
     }
   }
 }

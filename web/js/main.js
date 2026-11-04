@@ -2,6 +2,7 @@
 import { VW, VH, Assets, Input, Audio, SaveData, SpriteSheet, parseHex, Gfx, PixelFont, WHITE } from './core.js';
 import { LevelManager, ALL_TILE_NAMES } from './world.js';
 import { TitleScene } from './scenes.js';
+import { setupTouch, showTouchHelp } from './touch.js';
 
 const STEP = 1000 / 60;
 const FRAME_COUNT = 11; // frames por folha de personagem
@@ -31,14 +32,20 @@ async function loadCharacters() {
   }
   const list = (data.characters ?? []).map(c => ({
     id: c.id ?? 'dev', name: c.name ?? 'DEV', role: c.role ?? '', stack: c.stack ?? '',
-    description: c.description ?? '', folder: (c.folder || `Characters/${c.id}`).replace(/\/$/, ''),
+    description: c.description ?? '', superpower: c.superpower ?? '', weakness: c.weakness ?? '',
+    // frases tipicas: "quotes": ["...", "..."] (ou "quote": "..." no formato antigo)
+    quotes: [].concat(c.quotes ?? c.quote ?? []).filter(Boolean),
+    // atributos do perfil: [{ "label": "CAFE", "value": 0..5 }]
+    stats: (c.stats ?? []).map(s => ({ label: String(s.label ?? '').slice(0, 10), value: Math.max(0, Math.min(5, s.value | 0)) })),
+    folder: (c.folder || `Characters/${c.id}`).replace(/\/$/, ''),
     color: parseHex(c.color, [224, 72, 72, 255]), enabled: c.enabled !== false,
   }));
   if (!list.length) {
     list.push({ id: 'dev01', name: 'DEV 01', role: 'Full Stack', stack: '', description: 'Personagem padrao.',
       folder: 'Characters/dev01', color: [224, 72, 72, 255], enabled: true });
   }
-  await Assets.loadImages(list.flatMap(c => ['small', 'big', 'fire', 'portrait'].map(f => `${c.folder}/${f}.png`)));
+  // Personagens desativados ("enabled": false) aparecem como "EM BREVE" e nao carregam imagens.
+  await Assets.loadImages(list.filter(c => c.enabled).flatMap(c => ['small', 'big', 'fire', 'portrait'].map(f => `${c.folder}/${f}.png`)));
   for (const c of list) {
     // A largura do frame vem da imagem (largura / 11): celulas de 16 ou 32 px funcionam.
     const sheet = (file, h) => {
@@ -65,78 +72,23 @@ canvas.height = VH;
 ctx.imageSmoothingEnabled = false;
 
 /**
- * Escala inteira (pixels nitidos) quando cabe 2x ou mais; em telas pequenas (celular) usa a escala exata
- * para aproveitar a tela toda.
+ * Computador: escala inteira (pixels nitidos). Celular: ocupa a tela inteira (escala exata).
  */
 function resize() {
-  const portraitTouch = document.body.classList.contains('touch') && window.innerHeight > window.innerWidth;
-  const touchBar = portraitTouch ? 195 : 0;   // em pe, os botoes (e a dica de girar) ficam embaixo do jogo
-  const availW = window.innerWidth, availH = window.innerHeight - touchBar;
-  let scale = Math.min(availW / VW, availH / VH);
-  scale = scale >= 2 ? Math.floor(scale) : scale;
-  canvas.style.width = `${VW * scale}px`;
-  canvas.style.height = `${VH * scale}px`;
+  const touch = document.body.classList.contains('touch');
+  let scale = Math.min(window.innerWidth / VW, window.innerHeight / VH);
+  if (!touch && scale >= 2) scale = Math.floor(scale);
+  canvas.style.width = `${Math.floor(VW * scale)}px`;
+  canvas.style.height = `${Math.floor(VH * scale)}px`;
 }
 window.addEventListener('resize', resize);
+window.addEventListener('orientationchange', () => setTimeout(resize, 200));
+document.addEventListener('fullscreenchange', resize);
 
 function toggleFullscreen() {
   const el = document.documentElement;
   if (!document.fullscreenElement) el.requestFullscreen?.().catch(() => {});
   else document.exitFullscreen?.();
-}
-
-// ---------------------------------------------------------------- controles de toque
-function setupTouch() {
-  const isTouch = window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
-  if (!isTouch) return;
-  document.body.classList.add('touch');
-
-  // Cada dedo na tela aponta para o botao que esta embaixo dele. Assim da para:
-  // - usar varios dedos ao mesmo tempo (andar + pular + correr);
-  // - deslizar o dedo de um botao para outro (◀ para ▶) sem levantar.
-  const pad = document.getElementById('touch');
-  const buttons = [...pad.querySelectorAll('[data-actions]')];
-  const fingers = new Map();   // pointerId -> botao (ou null)
-  const buttonAt = (x, y) => document.elementFromPoint(x, y)?.closest('#touch [data-actions]') ?? null;
-  // Vibracao curta ao apertar (Android). So depois de um toque real, senao o navegador recusa.
-  const buzz = () => { if (navigator.userActivation?.hasBeenActive !== false) navigator.vibrate?.(8); };
-
-  const refresh = () => {
-    const pressed = new Set();
-    for (const btn of fingers.values()) btn?.dataset.actions.split(' ').forEach(a => pressed.add(a));
-    for (const a of pressed) if (!Input.touch.has(a)) Input.touchTapped.add(a);
-    Input.touch = pressed;
-    const held = new Set(fingers.values());
-    for (const b of buttons) b.classList.toggle('down', held.has(b));
-  };
-
-  pad.addEventListener('pointerdown', e => {
-    const btn = buttonAt(e.clientX, e.clientY);
-    if (!btn) return;
-    e.preventDefault();
-    try { pad.setPointerCapture(e.pointerId); } catch { /* alguns navegadores recusam; o toque funciona igual */ }
-    fingers.set(e.pointerId, btn);
-    buzz();
-    refresh();
-    Audio.unlock();
-  });
-  pad.addEventListener('pointermove', e => {
-    if (!fingers.has(e.pointerId)) return;
-    e.preventDefault();
-    const btn = buttonAt(e.clientX, e.clientY);
-    if (btn === fingers.get(e.pointerId)) return;
-    fingers.set(e.pointerId, btn);
-    if (btn) buzz();
-    refresh();
-  });
-  const release = e => {
-    if (!fingers.delete(e.pointerId)) return;
-    refresh();
-  };
-  pad.addEventListener('pointerup', release);
-  pad.addEventListener('pointercancel', release);
-  // Sem menu de "pressionar e segurar" nem selecao de texto nos botoes.
-  pad.addEventListener('contextmenu', e => e.preventDefault());
 }
 
 // ---------------------------------------------------------------- jogo
@@ -146,6 +98,7 @@ const game = {
   scene: null,
   pending: null,
   debug: false,
+  touch: false,      // jogando pelo celular (as telas mostram textos de toque em vez de teclas)
   changeScene(s) { this.pending = s; },
 };
 
@@ -157,6 +110,7 @@ function step() {
     game.scene = game.pending;
     game.pending = null;
     game.scene.enter();
+    if (game.scene.isGameplay) showTouchHelp();
   }
   game.scene?.update();
 }
@@ -191,8 +145,7 @@ function drawLoading(text) {
 }
 
 async function boot() {
-  resize();
-  setupTouch();
+  game.touch = setupTouch(game, canvas);
   resize();
   Input.init();
   window.addEventListener('keydown', e => {

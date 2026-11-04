@@ -63,42 +63,76 @@ Cada personagem é um dev de verdade, um amigo nosso. Todos jogam igual; muda o 
 <div align="center">
 <img src="docs/images/character-mariana.png" alt="Mariana: retrato, Júnior, Sênior e Firewall" width="720">
 
-**MARIANA**, Full Stack Developer · C# / .NET
-<br><sub><i>"Nunca faz deploy na sexta. Bom, quase nunca."</i></sub>
+**MARIANA**, Front-end · HTML / JavaScript
+<br><sub>Superpoder: faz piada de qualquer situação difícil e deixa o clima leve.</sub>
+<br><sub><i>"Na minha máquina funciona!" · "Aí é mais caro!"</i></sub>
+
+<br><br>
+
+<img src="docs/images/character-david.png" alt="David: retrato, Júnior, Sênior e Firewall" width="720">
+
+**DAVID**, QA · Petros e Brapoio
+<br><sub>Superpoder: explica qualquer coisa difícil de forma simples.</sub>
+<br><sub><i>"Deixa que eu resolvo" · "Yasss"</i></sub>
 </div>
 
 <br>
 
-<div align="center">
-<img src="docs/images/screen-select.png" alt="Seleção de personagem" width="512">
-<br><sub>Mais devs chegando em breve: a tela de seleção já tem vaga para eles.</sub>
-</div>
+<table>
+  <tr>
+    <td><img src="docs/images/screen-select.png" alt="Seleção de personagem"></td>
+    <td><img src="docs/images/screen-profile.png" alt="Perfil da Mariana"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Escolha seu dev (mais devs chegando em breve)</sub></td>
+    <td align="center"><sub>Perfil completo: atributos, superpoder e ponto fraco</sub></td>
+  </tr>
+</table>
+
+## Fases
+
+| | |
+|---|---|
+| **1-1 HELLO WORLD**: a cidade da tecnologia à noite, com sala bônus secreta no subsolo | **1-2 LEGACY CODE**: dentro da sala de servidores, com teto de código legado, túnel cheio de bugs e saída pelo duto |
+| <img src="docs/images/screen-blocks.png" alt="Fase 1-1"> | <img src="docs/images/screen-level2.png" alt="Fase 1-2"> |
 
 ## Funcionalidades
 
 - 🕹️ **Física fiel ao Super Mario Bros** (valores originais do NES, rodando a 60 passos por segundo)
-- ☕ **3 formas**: Júnior → Sênior (Café) → Firewall (atira); Sudo Star para invencibilidade
+- ☕ **3 formas**: Júnior → Sênior (Café) → Firewall (atira pacotes de dados); Sudo Star para invencibilidade
 - 🐞 **Inimigos**: Bug (esmagável) e Vírus (vira cápsula chutável, com combo de pontos)
-- 🧱 Blocos `?`, tijolos quebráveis, bloco de várias moedas e bloco invisível de vida extra
-- 🚇 **Canos** com sala bônus subterrânea, checkpoint no meio da fase e "hurry up" quando o tempo aperta
+- 🧱 Blocos `?`, tijolos quebráveis, bloco de várias moedas e blocos invisíveis
+- 🚇 **Canos** com sala bônus, checkpoint no meio da fase e "hurry up" quando o tempo aperta
 - 🚩 **Fim de fase clássico**: pontos pela altura no mastro, contagem do tempo e fogos de artifício
-- 📱 **Celular**: botões na tela com vários dedos ao mesmo tempo, deslizar entre direções e vibração.
-  Pode ser instalado na tela inicial como app.
+- 🪪 **Perfil de cada dev**: cargo, stack, atributos, superpoder, ponto fraco e frase típica
+- 📱 **Celular em tela cheia, sem botões**: analógico invisível no lado esquerdo, toque e deslize no direito.
+  Zoom bloqueado; pode ser instalado na tela inicial como app.
+- 🎵 **Trilha sonora 8-bit original**: 7 músicas e 21 efeitos sintetizados por código, no estilo do chip do NES
 - 🎮 Teclado e **controle de videogame** (Xbox / PlayStation)
 - 🏆 Recorde salvo no navegador
 
 ## Como jogar
 
-| Ação | Teclado | Celular | Controle |
-|---|---|---|---|
-| Mover | Setas / A D | ◀ ▶ | D-pad / analógico |
-| Pular | Z / Espaço | **A** | A |
-| Correr / atirar | X / Shift | **B** | X |
-| Agachar / entrar no cano | Seta para baixo | ▼ | Baixo |
-| Pausa / confirmar | Enter | START | Start |
-| Voltar ao menu | Esc | ESC | B |
-| Tela cheia | F | ⛶ | |
-| Som liga/desliga | M | 🔊 | |
+| Ação | Teclado | Controle |
+|---|---|---|
+| Mover | Setas / A D | D-pad / analógico |
+| Pular | Z / Espaço / **↑** | A / ↑ |
+| Correr | segure X / Shift | X |
+| Atirar pacote (com Firewall) | X / Shift / C | X |
+| Agachar / entrar no cano | ↓ | ↓ |
+| Pausa / confirmar | Enter | Start |
+| Voltar ao menu | Esc | B |
+| Tela cheia / som | F / M | |
+
+**No celular** (o jogo entra em tela cheia no primeiro toque):
+
+| Onde | Gesto | Ação |
+|---|---|---|
+| Lado **esquerdo** | arrastar o dedo para os lados | andar (mais longe = correr) |
+| Lado **esquerdo** | arrastar para cima / para baixo | pular / agachar ou entrar no cano |
+| Lado **direito** | tocar (segurar = mais alto) | pular |
+| Lado **direito** | deslizar o dedo | lançar pacote (Firewall) |
+| Placar (topo) | tocar | pausar |
 
 > **Dicas:** segure **correr** para pular mais longe. Pise na cápsula do vírus para chutá-la contra
 > os outros inimigos. Procure o cano que leva à sala bônus.
@@ -175,7 +209,7 @@ SuperDevStar/
 |---|---|
 | Adicionar um amigo como personagem | 4 imagens em `Assets/Characters/<id>/` + um bloco em `characters.json`. Veja [docs/ASSETS.md](docs/ASSETS.md) |
 | Criar uma fase nova | Um arquivo de texto em `Assets/Levels/`, onde cada letra é um bloco. Veja [docs/LEVEL_FORMAT.md](docs/LEVEL_FORMAT.md) |
-| Adicionar sons e músicas | Arquivos em `web/assets/Audio/` listados no `audio.json`. Veja [docs/PUBLICAR_WEB.md](docs/PUBLICAR_WEB.md) |
+| Mudar sons e músicas | Edite `tools/generate_audio.py` e gere de novo, ou aponte arquivos próprios no `Assets/Audio/audio.json`. Veja [docs/PUBLICAR_WEB.md](docs/PUBLICAR_WEB.md) |
 | Converter artes geradas por IA | Coloque em `Imagens Geradas/` e use `tools/convert_generated_art.py` |
 
 ---

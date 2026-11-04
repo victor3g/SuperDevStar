@@ -1,17 +1,54 @@
-// Personagens jogaveis. Todos tem a mesma jogabilidade; muda o visual e os textos.
-// Para adicionar um amigo: copie o bloco, mude id/name/folder e crie a pasta com os sprites.
+// Personagens jogaveis. Todos tem a mesma jogabilidade; muda o visual e o perfil.
+// Para adicionar um amigo: preencha um bloco, crie a pasta com os 4 sprites e mude "enabled" para true.
 // selectSlots = quantas cartas aparecem na tela de selecao (vagas extras mostram "EM BREVE").
+//
+// Campos do perfil (tela de selecao). Pode usar acentos: o jogo converte para a fonte pixelada.
+//   name        nome no placar e no perfil (ate ~10 letras)
+//   role        cargo             stack     tecnologias / sistemas
+//   description habitos e jeitao (ate ~110 letras para caber inteiro no perfil)
+//   superpower  o que a pessoa faz de melhor     weakness  o que mais irrita
+//   quotes      frases tipicas (uma ou mais)
+//   stats       ate 4 atributos de 1 a 5 (rotulo com ate 10 letras)
+//   color       cor tematica (usada enquanto nao ha sprite)
 {
   "selectSlots": 4,
   "characters": [
     {
       "id": "dev01",
       "name": "MARIANA",
-      "role": "Full Stack Developer",
-      "stack": "C# / .NET",
-      "description": "Nunca faz deploy na sexta. Bom, quase nunca.",
+      "role": "Front-end",
+      "stack": "HTML / JavaScript",
+      "description": "Café de garrafa sem açúcar, Monster branco e rap de rapper bonitão. Quando dá pau em produção, ri pra não chorar.",
+      "superpower": "Faz piada de qualquer situação difícil e deixa o clima leve.",
+      "weakness": "CornoJOB de copia e cola.",
+      "quotes": ["Na minha máquina funciona!", "Aí é mais caro!"],
+      "stats": [
+        { "label": "CAFÉ", "value": 5 },
+        { "label": "GAMBIARRA", "value": 4 },
+        { "label": "DEPLOY", "value": 3 },
+        { "label": "MEMES", "value": 5 }
+      ],
       "folder": "Characters/dev01",
-      "color": "#E04848",
+      "color": "#C8A2C8",
+      "enabled": true
+    },
+    {
+      "id": "dev02",
+      "name": "DAVID",
+      "role": "QA",
+      "stack": "Petros e Brapoio",
+      "description": "Zero cafeína e alérgico a abacaxi. Resolve tudo em silêncio; se dá pau em produção, vira detetive de logs.",
+      "superpower": "Explica qualquer coisa difícil de forma simples.",
+      "weakness": "Usuário que não sabe o que quer.",
+      "quotes": ["Deixa que eu resolvo", "Yasss"],
+      "stats": [
+        { "label": "FOCO", "value": 5 },
+        { "label": "VELOCIDADE", "value": 4 },
+        { "label": "DOCS", "value": 4 },
+        { "label": "PACIÊNCIA", "value": 3 }
+      ],
+      "folder": "Characters/dev02",
+      "color": "#3C78D8",
       "enabled": true
     }
   ]
