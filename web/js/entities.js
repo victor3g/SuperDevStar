@@ -35,6 +35,10 @@ export class Entity {
     return this.x < o.x + o.w && o.x < this.x + this.w && this.y < o.y + o.h && o.y < this.y + this.h;
   }
   onTouchPlayer(_p) {}
+  /** Itens com versao do tema (ex.: Items/coin_neon.png) trocam de imagem ao entrar na fase. */
+  applyTheme(theme) {
+    if (this.themeName && this.sheet) this.sheet = Sprites.themed('Items', this.themeName, theme, this.sheet.fw, this.sheet.fh, this.sheet.fallback);
+  }
   update() {}
   draw(_ctx) {}
   drawDebug(ctx) { Gfx.outline(ctx, Math.floor(this.x), Math.floor(this.y), Math.round(this.w), Math.round(this.h), [255, 0, 0, 255]); }
@@ -118,10 +122,11 @@ export const Frame = { Idle: 0, Walk1: 1, Skid: 4, Jump: 5, Crouch: 6, Die: 7, C
 export const WALK_CYCLE = [Frame.Walk1, Frame.Idle, Frame.Walk1 + 1, Frame.Idle, Frame.Walk1 + 2, Frame.Idle];
 
 const PLAYER_W = 12, SMALL_H = 15, BIG_H = 27;
-// Fisica do Super Mario Bros (NES), em pixels/frame.
-const WALK_ACCEL = 0.037109375, RUN_ACCEL = 0.0556640625, RELEASE_DECEL = 0.05078125;
+// Fisica baseada no Super Mario Bros (NES), em pixels/frame, um pouco mais lenta na horizontal
+// e com pulo um pouco mais alto (feedback dos testes: o original parecia rapido demais nesta tela).
+const WALK_ACCEL = 0.031, RUN_ACCEL = 0.047, RELEASE_DECEL = 0.045;
 const SKID_DECEL = 0.1015625, AIR_TURN_DECEL = 0.0556640625;
-const MAX_WALK = 1.5625, MAX_RUN = 2.5625, MAX_FALL = 4.5, RUN_HOLD_FRAMES = 10;
+const MAX_WALK = 1.3, MAX_RUN = 2.1, MAX_FALL = 4, RUN_HOLD_FRAMES = 10;
 const STAR_COLORS = [null, [255, 120, 120], [120, 255, 120], [120, 170, 255]];
 
 /**
@@ -144,7 +149,7 @@ export class Player extends Entity {
     this.jumping = false;
     this.jumpPose = false;
     this.gravHold = 0.125;
-    this.gravFall = 0.4375;
+    this.gravFall = 0.4;
     this.runHold = 0;
     this.throwTimer = 0;
     this.frame = Frame.Idle;
@@ -264,16 +269,19 @@ export class Player extends Entity {
     // Pulo: altura depende da velocidade horizontal, como no SMB
     if (jumpPressed && this.onGround) {
       const speed = Math.abs(this.vx);
-      if (speed < 1) { this.vy = -4; this.gravHold = 0.125; this.gravFall = 0.4375; }
-      else if (speed < 2.3125) { this.vy = -4; this.gravHold = 0.1171875; this.gravFall = 0.375; }
-      else { this.vy = -5; this.gravHold = 0.15625; this.gravFall = 0.5625; }
+      // alturas maximas (segurando o pulo): parado ~4,6 blocos, andando ~4,9, correndo ~5,1
+      if (speed < 0.9) { this.vy = -4.3; this.gravHold = 0.125; this.gravFall = 0.4; }
+      else if (speed < 1.8) { this.vy = -4.3; this.gravHold = 0.1171875; this.gravFall = 0.36; }
+      else { this.vy = -4.8; this.gravHold = 0.14; this.gravFall = 0.5; }
       this.jumping = true;
       this.jumpPose = true;
       this.onGround = false;
       Audio.play(this.isBig ? 'jump_big' : 'jump_small');
     }
     if (!jumpHeld) this.jumping = false;
-    this.applyGravity(this.jumping && this.vy < 0 ? this.gravHold : this.gravFall, MAX_FALL);
+    // subindo: segurar pulo = gravidade leve; lancado por mola sobe alto mesmo sem segurar
+    const rise = this.jumping ? this.gravHold : (this.springRise || this.gravFall);
+    this.applyGravity(this.vy < 0 ? rise : this.gravFall, MAX_FALL);
 
     // Atirar pacote (Firewall)
     if (firePressed && this.power === PowerState.Fire && !this.crouching) this.tryThrow();
@@ -291,8 +299,9 @@ export class Player extends Entity {
       this.vy = 0;
       this.jumping = false;
       this.jumpPose = false;
+      this.springRise = 0;
       this.stompCombo = 0;
-      this.gravFall = 0.4375;
+      this.gravFall = 0.4;
     }
     if (this.hitCeiling && this.vy < 0) {
       this.vy = 0;
@@ -371,6 +380,13 @@ export class Player extends Entity {
       this.stage.scene.killPlayer(false);
       return;
     }
+    if (this.power === PowerState.Fire) {
+      // Firewall: perde so o Firewall e continua Senior
+      this.power = PowerState.Big;
+      this.invulnerableTimer = 120;
+      Audio.play('pipe');
+      return;
+    }
     this.fromPower = this.power;
     this.toPower = PowerState.Small;
     this.power = PowerState.Small;
@@ -387,11 +403,12 @@ export class Player extends Entity {
   }
   /** Quique ao pisar num inimigo. Segurar pulo deixa o quique mais alto. */
   bounce() {
+    this.springRise = 0;
     this.vy = -4;
     this.jumping = true;
     this.jumpPose = true;
     this.gravHold = 0.125;
-    this.gravFall = 0.4375;
+    this.gravFall = 0.4;
   }
   startDeath(pit) {
     this.mode = 'dying';
@@ -844,6 +861,12 @@ export class Coffee extends Item {
   onEmerged() { this.vx = 1; }
   updateItem() { this.moveLikeMushroom(); }
   collect(p) {
+    // quem nao pode tomar cafe (David) leva dano em vez de crescer
+    if (this.kind === 'coffee' && p.character.coffeeHurts) {
+      this.stage.scene.showHint(`${p.character.name} NAO PODE TOMAR CAFE!`, 180);
+      p.hurt();
+      return;
+    }
     this.stage.scene.addScore(1000, this.centerX, this.top);
     this.stage.scene.growthItemName = GROWTH_ITEMS[this.kind].name;
     if (!p.isBig) p.powerUp(PowerState.Big);
@@ -854,7 +877,7 @@ export class Coffee extends Item {
 
 /** FIREWALL - equivalente a flor de fogo. Permite atirar pacotes de dados. */
 export class Firewall extends Item {
-  constructor(x, y) { super(x, y); this.sheet = Sprites.get('Items/firewall.png', 16, 16, [240, 100, 40, 255]); this.anim = 0; }
+  constructor(x, y) { super(x, y); this.sheet = Sprites.get('Items/firewall.png', 16, 16, [240, 100, 40, 255]); this.anim = 0; this.themeName = 'firewall'; }
   updateItem() { this.anim++; }
   hop() {}
   collect(p) {
@@ -869,7 +892,7 @@ export class Firewall extends Item {
 
 /** SUDO STAR - equivalente a estrela. Invencibilidade temporaria. */
 export class SudoStar extends Item {
-  constructor(x, y) { super(x, y); this.sheet = Sprites.get('Items/sudo_star.png', 16, 16, [255, 230, 60, 255]); this.anim = 0; }
+  constructor(x, y) { super(x, y); this.sheet = Sprites.get('Items/sudo_star.png', 16, 16, [255, 230, 60, 255]); this.anim = 0; this.themeName = 'sudo_star'; }
   onEmerged() { this.vx = 1; this.vy = -4; }
   updateItem() {
     this.anim++;
@@ -890,7 +913,7 @@ export class SudoStar extends Item {
 
 /** BACKUP (disquete) - equivalente ao cogumelo verde. Vida extra. */
 export class Backup extends Item {
-  constructor(x, y) { super(x, y); this.sheet = Sprites.get('Items/backup.png', 16, 16, [40, 200, 80, 255]); }
+  constructor(x, y) { super(x, y); this.sheet = Sprites.get('Items/backup.png', 16, 16, [40, 200, 80, 255]); this.themeName = 'backup'; }
   onEmerged() { this.vx = 1; }
   updateItem() { this.moveLikeMushroom(); }
   collect() { this.stage.scene.giveOneUp(this.centerX, this.top); }
@@ -907,6 +930,7 @@ export class Coin extends Entity {
     this.x = tileX + 3;
     this.y = tileY + 1;
     this.sheet = Sprites.get('Items/coin.png', 16, 16, [252, 200, 40, 255]);
+    this.themeName = 'coin';
   }
   get interactsWithPlayer() { return !this.removed; }
   onTouchPlayer() {
@@ -933,6 +957,7 @@ export class CoinPop extends Entity {
     this.layer = Layer.Front;
     this.anim = 0;
     this.sheet = Sprites.get('Items/coin_spin.png', 16, 16, [252, 200, 40, 255]);
+    this.themeName = 'coin_spin';
   }
   update() {
     this.anim++;
@@ -1133,6 +1158,126 @@ class CoffeeDrop extends Entity {
     if (--this.life <= 0) this.removed = true;
   }
   draw(ctx) { Gfx.rect(ctx, Math.round(this.x), Math.round(this.y), 2, 2, this.color); }
+}
+
+// =====================================================================
+// Fase 1-3 (NEON GRID): plataformas, mola, espinhos, drone e poste de checkpoint
+// =====================================================================
+
+/**
+ * Plataforma flutuante (so e solida por cima). Vai e volta: 'h' na horizontal, 'v' na vertical.
+ * Quem esta em cima e carregado junto (ver Stage.resolvePlatforms).
+ */
+export class MovingPlatform extends Entity {
+  constructor(tileX, tileY, axis = 'h', range = 64, speed = 0.5) {
+    super();
+    this.w = 48; this.h = 8;
+    this.x = tileX; this.y = tileY;
+    this.originX = this.x; this.originY = this.y;
+    this.axis = axis; this.range = range; this.speed = speed; this.dir = 1;
+    this.rider = false;
+    this.sheet = Sprites.get('Objects/platform.png', 48, 14, [120, 130, 160, 255]);
+  }
+  get platformTop() { return this.y; }
+  update() {
+    const pos = this.axis === 'h' ? this.x - this.originX : this.originY - this.y;
+    if (pos >= this.range) this.dir = -1;
+    else if (pos <= 0) this.dir = 1;
+    const dx = this.axis === 'h' ? this.speed * this.dir : 0;
+    const dy = this.axis === 'v' ? -this.speed * this.dir : 0;
+    this.x += dx; this.y += dy;
+    const p = this.stage.player;
+    if (this.rider && p.mode === 'normal') {
+      if (dx) p.moveX(dx);
+      p.y += dy;
+    }
+  }
+  draw(ctx) { this.sheet.draw(ctx, 0, Math.round(this.x), Math.round(this.y) - 2); }
+}
+
+/** Mola: pisou em cima, e lancada bem alto (segurar o pulo deixa ainda mais alto). */
+export class Spring extends Entity {
+  constructor(tileX, tileY) {
+    super();
+    this.w = 14; this.h = 14;
+    this.x = tileX + 1; this.y = tileY + 2;
+    this.squash = 0;
+    this.rider = false;
+    this.sheet = Sprites.get('Objects/spring.png', 16, 16, [80, 200, 255, 255]);
+  }
+  get platformTop() { return this.y; }
+  onLanded(p) {
+    this.squash = 10;
+    p.vy = -6.2;                       // ~9 blocos segurando o pulo
+    p.jumping = true;
+    p.jumpPose = true;
+    p.onGround = false;
+    p.gravHold = 0.125;
+    p.gravFall = 0.4;
+    p.springRise = 0.16;               // sem segurar o pulo ainda sobe ~7 blocos
+    Audio.play('spring');
+  }
+  update() { if (this.squash > 0) this.squash--; }
+  draw(ctx) { this.sheet.draw(ctx, this.squash > 0 ? 1 : 0, this.centerX - 8, this.bottom - 16); }
+}
+
+/** Espinhos de neon: encostar machuca (a Sudo Star protege). */
+export class Spikes extends Entity {
+  constructor(tileX, tileY) {
+    super();
+    this.w = 12; this.h = 7;
+    this.x = tileX + 2; this.y = tileY + 9;
+    this.sheet = Sprites.get('Objects/spikes.png', 16, 16, [230, 60, 230, 255]);
+  }
+  get interactsWithPlayer() { return true; }
+  onTouchPlayer(p) { if (!p.invincible) p.hurt(); }
+  draw(ctx) { this.sheet.draw(ctx, 0, this.x - 2, this.y - 9); }
+}
+
+/** Poste de checkpoint: vermelho; fica verde quando o checkpoint e salvo. */
+export class CheckpointPost extends Entity {
+  constructor(tileX, tileY) {
+    super();
+    this.x = tileX; this.y = tileY - 16; this.w = 16; this.h = 32;
+    this.sheet = Sprites.get('Objects/checkpoint.png', 16, 32, [220, 60, 60, 255]);
+    this.lit = null;
+  }
+  update() {
+    const on = !!this.stage.scene.session?.checkpointReached;
+    if (this.lit === false && on) {
+      Audio.play('coin');
+      this.stage.scene.showHint?.('CHECKPOINT SALVO!', 150);
+    }
+    this.lit = on;
+  }
+  draw(ctx) { this.sheet.draw(ctx, this.lit ? 1 : 0, this.x, this.y); }
+}
+
+/** DRONE - inimigo voador: atravessa a tela em onda. Pode ser pisado ou derrubado com pacote. */
+export class Drone extends Enemy {
+  constructor(tileX, tileY) {
+    super();
+    this.w = 16; this.h = 10;
+    this.x = tileX; this.baseY = tileY + 3; this.y = this.baseY;
+    this.vx = -0.6;
+    this.t = 0;
+    this.sheet = Sprites.get('Enemies/drone.png', 24, 16, [220, 80, 220, 255]);
+  }
+  updateAlive() {
+    this.t++;
+    this.x += this.vx;
+    this.y = this.baseY + Math.sin(this.t * 0.045) * 18;
+  }
+  onStomped(p) {
+    this.killFlipped(0, 0);
+    Audio.play('stomp');
+    p.bounce();
+    this.stage.scene.awardStomp(p, this.centerX, this.top);
+  }
+  draw(ctx) {
+    const frame = this.flippedDeath ? 0 : [0, 1, 2, 1][Math.floor(this.t / 6) % 4];
+    this.sheet.draw(ctx, frame, this.centerX - 12, this.centerY - 8, { flipY: this.flippedDeath });
+  }
 }
 
 // =====================================================================

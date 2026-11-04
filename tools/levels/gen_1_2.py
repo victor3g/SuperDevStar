@@ -90,7 +90,7 @@ hline(m, 47, 60, 5, 'o')                # moedas em cima do tunel (sobe pelas po
 # --- fileira de canos
 pipe(m, 64, 11)
 pipe(m, 70, 10)
-pipe(m, 76, 9)
+pipe(m, 76, 10)                         # 3 blocos: da para pular parado
 put(m, 68, 12, 'g'); put(m, 74, 12, 'g')
 
 # --- buraco 80-82 com degraus

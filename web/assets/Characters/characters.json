@@ -5,10 +5,10 @@
 // Campos do perfil (tela de selecao). Pode usar acentos: o jogo converte para a fonte pixelada.
 //   name        nome no placar e no perfil (ate ~10 letras)
 //   role        cargo             stack     tecnologias / sistemas
-//   description habitos e jeitao (ate ~110 letras para caber inteiro no perfil)
+//   description habitos e jeitao (texto longo rola sozinho no perfil)
 //   superpower  o que a pessoa faz de melhor     weakness  o que mais irrita
 //   quotes      frases tipicas (uma ou mais)
-//   stats       ate 4 atributos de 1 a 5 (rotulo com ate 10 letras)
+//   stats       ate 4 atributos de 1 a 5 (rotulo com ate 12 letras)
 //   color       cor tematica (usada enquanto nao ha sprite)
 //   powerups    item que faz virar Senior: "coffee", "monster" e/ou "gem" (com mais de um, sorteia a cada bloco)
 //   coffeeHurts true = canecas de cafe caem do ceu e machucam (quem nao pode tomar cafe)
@@ -30,6 +30,7 @@
         { "label": "DEPLOY", "value": 3 },
         { "label": "MEMES", "value": 5 }
       ],
+      "powerups": ["coffee", "monster"],
       "folder": "Characters/dev01",
       "color": "#C8A2C8",
       "enabled": true
@@ -49,6 +50,8 @@
         { "label": "DOCUMENTAÇÃO", "value": 4 },
         { "label": "PACIÊNCIA", "value": 3 }
       ],
+      "powerups": ["gem"],
+      "coffeeHurts": true,
       "folder": "Characters/dev02",
       "color": "#3B82F6",
       "enabled": true
@@ -61,7 +64,9 @@
       "description": "Dados e full-stack. Toca piano via MIDI em Python e cria seus próprios mundos 2D.",
       "superpower": "Sobe pipeline ou automação do zero antes do café terminar.",
       "weakness": "Loop infinito de refatoração e de mecânicas novas.",
-      "quotes": ["Vou automatizar isso aqui rapidinho."],
+      "quotes": [
+        "Vou automatizar isso aqui rapidinho."
+      ],
       "stats": [
         { "label": "AUTOMAÇÃO", "value": 5 },
         { "label": "PIPELINE", "value": 5 },

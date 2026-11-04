@@ -1,15 +1,21 @@
+# Publica a versao web (pasta web/) no GitHub Pages a cada push na branch main.
+# Configuracao unica no GitHub: Settings > Pages > Build and deployment > Source = "GitHub Actions".
 name: Publicar jogo no GitHub Pages
+
 on:
   push:
     branches: [main]
-  workflow_dispatch:
+  workflow_dispatch: # permite publicar manualmente pela aba Actions
+
 permissions:
   contents: read
   pages: write
   id-token: write
+
 concurrency:
   group: pages
   cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -17,14 +23,36 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - name: Baixar o codigo
+        uses: actions/checkout@v4
+
+      # "Re-run" de uma execucao antiga publicaria uma versao velha por cima da nova.
+      # Esta verificacao so deixa publicar o commit mais recente da main.
+      - name: Garantir que e a versao mais recente da main
+        run: |
+          git fetch --depth=1 origin main
+          LATEST=$(git rev-parse origin/main)
+          if [ "$LATEST" != "$GITHUB_SHA" ]; then
+            echo "::error::Esta execucao e do commit ${GITHUB_SHA::7}, mas a main ja esta no ${LATEST::7}. Para publicar, use 'Run workflow' (nao 'Re-run')."
+            exit 1
+          fi
+
+      - name: Instalar Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: python tools/build_web.py
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+
+      - name: Copiar Assets/ para web/assets/
+        run: python tools/build_web.py
+
+      - name: Configurar o Pages
+        uses: actions/configure-pages@v5
+
+      - name: Enviar a pasta web
+        uses: actions/upload-pages-artifact@v3
         with:
           path: web
-      - id: deployment
+
+      - name: Publicar
+        id: deployment
         uses: actions/deploy-pages@v4

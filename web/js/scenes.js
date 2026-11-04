@@ -61,6 +61,7 @@ const TOUCH_CONTROLS = [
   'TOQUE NO PLACAR = PAUSA',
 ];
 const MENU_Y = 128, MENU_STEP = 16;
+const PAUSE_MENU_Y = 196;   // linha do "MENU PRINCIPAL" na tela de pausa
 
 export class TitleScene extends Scene {
   confirm() {
@@ -171,12 +172,15 @@ export class CharacterSelectScene extends Scene {
     if (!this.playable(c)) { Audio.play('bump'); return; }
     Audio.play('menu_select');
     this.profile = true;
+    this.scroll = 0;            // rolagem do texto do perfil (quando nao cabe inteiro)
+    this.scrollWait = 120;
+    this.scrollManual = false;
   }
   play() {
     const c = this.at(this.cursor);
     Audio.play('menu_select');
-    this.game.session = new GameSession(c);
-    this.game.changeScene(new LevelIntroScene(this.game, LevelManager.first));
+    this.game.character = c;
+    this.game.changeScene(new LevelSelectScene(this.game));
   }
 
   update() {
@@ -184,6 +188,8 @@ export class CharacterSelectScene extends Scene {
     if (this.profile) {
       if (Input.wasPressed('confirm')) this.play();
       else if (Input.wasPressed('back')) { this.profile = false; Audio.play('menu_move'); }
+      else if (Input.isDown('down')) this.scrollBy(1.5);
+      else if (Input.isDown('up')) this.scrollBy(-1.5);
       return;
     }
     if (Input.wasPressed('left')) this.move(-1);
@@ -211,6 +217,12 @@ export class CharacterSelectScene extends Scene {
     if (y >= this.infoTop) this.choose();
   }
   onSwipe(dir) { if (!this.profile) this.move(dir); }
+  /** Rolagem manual do texto do perfil (setas ou arrastar o dedo); a automatica para. */
+  scrollBy(dy) {
+    this.scrollManual = true;
+    this.scroll = Math.max(0, Math.min(this.scrollMax ?? 0, this.scroll + dy));
+  }
+  onDrag(dy) { if (this.profile) this.scrollBy(-dy); }
 
   // ---------------- desenho
   drawBackground(ctx) {
@@ -281,11 +293,11 @@ export class CharacterSelectScene extends Scene {
     }
   }
 
-  /** Barras de atributos (0 a 5). Rotulos de ate 10 letras. */
+  /** Barras de atributos (0 a 5). Rotulos de ate 12 letras. */
   drawStats(ctx, c, x, y, maxLines = 4, lineH = 10) {
     for (const s of (c.stats ?? []).slice(0, maxLines)) {
       PixelFont.draw(ctx, s.label, x, y, SOFT);
-      const bx = x + 64;
+      const bx = x + 76;                          // rotulo de ate 12 letras
       for (let i = 0; i < 5; i++) Gfx.rect(ctx, bx + i * 9, y, 7, 7, i < s.value ? YELLOW : [50, 55, 80, 255]);
       y += lineH;
     }
@@ -307,27 +319,53 @@ export class CharacterSelectScene extends Scene {
     PixelFont.draw(ctx, PixelFont.wrap(c.role, maxW)[0] ?? '', tx, y, WHITE); y += 10;
     if (c.stack) { PixelFont.draw(ctx, PixelFont.wrap(c.stack, maxW)[0], tx, y, CYAN); y += 10; }
     y = this.drawStats(ctx, c, tx, y + 3, 4, 9);
-    // textos do perfil (largura toda, abaixo do retrato)
-    y = Math.max(y + 3, 34 + PORTRAIT + 6);
+    // textos do perfil (largura toda, abaixo do retrato). Nada e cortado: se nao couber, o texto rola.
+    const top = Math.max(y + 3, 34 + PORTRAIT + 6);
     const left = 14, width = VW - 28, LINE = 9;
-    const LAST_LINE_Y = 196;   // abaixo disso ficam os botoes
-    const block = (label, text, color, maxLines) => {
-      if (!text || y > LAST_LINE_Y) return;
-      const lines = PixelFont.wrap(label ? `${label} ${text}` : text, width).slice(0, maxLines);
-      for (let i = 0; i < lines.length && y <= LAST_LINE_Y; i++) {
-        const line = lines[i];
-        if (i === 0 && label) {
-          PixelFont.draw(ctx, label, left, y, YELLOW);
-          PixelFont.draw(ctx, line.slice(label.length), left + PixelFont.measure(label) + 1, y, color);
-        } else PixelFont.draw(ctx, line, left, y, color);
-        y += LINE;
-      }
-      y += 2;
+    const BOTTOM = 204;                                  // abaixo disso ficam os botoes
+    const lines = [];                                    // [texto, cor, rotulo]
+    const block = (label, text, color) => {
+      if (!text) return;
+      PixelFont.wrap(label ? `${label} ${text}` : text, width).forEach((l, i) => lines.push([l, color, i === 0 ? label : '']));
+      lines.push(null);                                  // espaco entre blocos
     };
-    block('SUPERPODER:', c.superpower, WHITE, 2);
-    block('PONTO FRACO:', c.weakness, WHITE, 2);
-    block('', c.description, SOFT, 3);
-    if (c.quotes.length) block('', quoteText(c), CYAN, 2);
+    block('SUPERPODER:', c.superpower, WHITE);
+    block('PONTO FRACO:', c.weakness, WHITE);
+    block('', c.description, SOFT);
+    if (c.quotes.length) block('', quoteText(c), CYAN);
+    if (lines.at(-1) === null) lines.pop();
+    const contentH = lines.reduce((h, l) => h + (l ? LINE : 3), 0);
+    this.scrollMax = Math.max(0, contentH - (BOTTOM - top));
+    if (this.scrollMax > 0 && !this.scrollManual) {
+      // espera, rola devagar ate o fim, espera e volta ao comeco
+      if (this.scrollWait > 0) this.scrollWait--;
+      else if (this.scroll < this.scrollMax) { this.scroll = Math.min(this.scrollMax, this.scroll + 0.25); if (this.scroll >= this.scrollMax) this.scrollWait = 150; }
+      else { this.scroll = 0; this.scrollWait = 150; }
+    }
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(left, top, width, BOTTOM - top);
+    ctx.clip();
+    let ly = top - Math.round(this.scroll ?? 0);
+    for (const l of lines) {
+      if (!l) { ly += 3; continue; }
+      const [text, color, label] = l;
+      if (ly > top - LINE && ly < BOTTOM) {
+        if (label) {
+          PixelFont.draw(ctx, label, left, ly, YELLOW);
+          PixelFont.draw(ctx, text.slice(label.length), left + PixelFont.measure(label) + 1, ly, color);
+        } else PixelFont.draw(ctx, text, left, ly, color);
+      }
+      ly += LINE;
+    }
+    ctx.restore();
+    if (this.scrollMax > 0) {
+      // barrinha de rolagem a direita
+      const trackH = BOTTOM - top, barH = Math.max(8, trackH * (trackH / contentH));
+      const barY = top + (trackH - barH) * ((this.scroll ?? 0) / this.scrollMax);
+      Gfx.rect(ctx, VW - 11, top, 2, trackH, [40, 50, 80, 255]);
+      Gfx.rect(ctx, VW - 11, Math.round(barY), 2, Math.round(barH), CYAN);
+    }
     // botoes
     const blink = Math.floor(this.frame / 12) % 2 === 0;
     for (const [b, label, on] of [[PLAY_BTN, 'JOGAR', true], [BACK_BTN, 'VOLTAR', false]]) {
@@ -336,6 +374,122 @@ export class CharacterSelectScene extends Scene {
       PixelFont.drawCentered(ctx, label, b.x + b.w / 2, b.y + 5, WHITE);
     }
     if (!this.game.touch) PixelFont.drawCentered(ctx, 'ENTER JOGAR   ESC VOLTAR', VW / 2, 228, GRAY);
+  }
+}
+
+// =====================================================================
+// Escolha de fase. As fases sao independentes (cada uma comeca do zero: 3 vidas, Junior, 0 pontos),
+// mas seguem a ordem de levels.txt: a proxima so libera quando a anterior e concluida.
+// =====================================================================
+const LS_TOP = 50, LS_CARD_H = 40, LS_GAP = 6, LS_VISIBLE = 3;
+
+export class LevelSelectScene extends Scene {
+  /** focus: fase que comeca selecionada; unlocked: fase recem-liberada (mostra o aviso). */
+  constructor(game, focus = null, unlocked = null) {
+    super(game);
+    this.focus = focus;
+    this.unlocked = unlocked;
+  }
+  enter() {
+    this.frame = 0;
+    this.ids = LevelManager.order;
+    // comeca na fase pedida ou na primeira liberada e ainda nao concluida
+    const firstNew = this.ids.find(id => this.isOpen(id) && !SaveData.isCleared(id));
+    this.cursor = Math.max(0, this.ids.indexOf(this.focus ?? firstNew ?? this.ids[0]));
+    LevelManager.loadInfo();
+    Audio.playMusic('select');
+  }
+  isOpen(id) { return LevelManager.isUnlocked(id, x => SaveData.isCleared(x)); }
+  get first() { return Math.max(0, Math.min(this.cursor - 1, this.ids.length - LS_VISIBLE)); }
+  cardRect(i) {
+    const row = i - this.first;
+    return { x: 20, y: LS_TOP + row * (LS_CARD_H + LS_GAP), w: VW - 40, h: LS_CARD_H };
+  }
+
+  move(d) {
+    const before = this.cursor;
+    this.cursor = Math.max(0, Math.min(this.ids.length - 1, this.cursor + d));
+    if (before !== this.cursor) Audio.play('menu_move');
+  }
+  play() {
+    const id = this.ids[this.cursor];
+    if (!this.isOpen(id)) { Audio.play('bump'); return; }
+    Audio.play('menu_select');
+    this.game.session = new GameSession(this.game.character);   // fase independente: comeca do zero
+    this.game.session.levelId = id;
+    this.game.changeScene(new LevelIntroScene(this.game, id));
+  }
+  back() {
+    Audio.play('menu_move');
+    this.game.changeScene(new CharacterSelectScene(this.game));
+  }
+  update() {
+    this.frame++;
+    if (Input.wasPressed('up') || Input.wasPressed('left')) this.move(-1);
+    if (Input.wasPressed('down') || Input.wasPressed('right')) this.move(1);
+    if (Input.wasPressed('confirm')) this.play();
+    else if (Input.wasPressed('back')) this.back();
+  }
+  /** Toque: na fase seleciona; tocar de novo na mesma joga. */
+  onTap(x, y) {
+    if (y > VH - 18) { this.back(); return; }
+    for (let i = this.first; i < Math.min(this.ids.length, this.first + LS_VISIBLE); i++) {
+      if (!inside(this.cardRect(i), x, y)) continue;
+      if (i === this.cursor) this.play();
+      else { this.cursor = i; Audio.play('menu_move'); }
+      return;
+    }
+  }
+  onSwipe(dir) { this.move(dir); }
+
+  draw(ctx) {
+    Gfx.rect(ctx, 0, 0, VW, VH, [11, 16, 38, 255]);
+    const grid = [24, 36, 72, 255];
+    for (let x = 0; x < VW; x += 16) Gfx.rect(ctx, x, 0, 1, VH, grid);
+    for (let y = Math.floor(this.frame / 2) % 16; y < VH; y += 16) Gfx.rect(ctx, 0, y, VW, 1, grid);
+    PixelFont.drawCentered(ctx, 'ESCOLHA A FASE', VW / 2, 10, YELLOW, 2, true);
+    const c = this.game.character;
+    if (c) PixelFont.drawCentered(ctx, `DEV: ${c.name}   RECORDE ${pad(SaveData.topScore, 6)}`, VW / 2, 32, SOFT);
+    for (let i = this.first; i < Math.min(this.ids.length, this.first + LS_VISIBLE); i++) this.drawCard(ctx, i, this.cardRect(i));
+    // setas quando ha mais fases fora da tela
+    if (this.first > 0) PixelFont.drawCentered(ctx, '^', VW / 2, LS_TOP - 9, CYAN);
+    if (this.first + LS_VISIBLE < this.ids.length) PixelFont.drawCentered(ctx, 'V', VW / 2, LS_TOP + LS_VISIBLE * (LS_CARD_H + LS_GAP) - 4, CYAN);
+    if (this.unlocked && Math.floor(this.frame / 20) % 3 !== 0) {
+      const w = LevelManager.info[this.unlocked]?.world ?? this.unlocked;
+      PixelFont.drawCentered(ctx, `FASE ${w} LIBERADA!`, VW / 2, 200, [120, 255, 140, 255], 1, true);
+    }
+    const hint = this.game.touch ? 'TOQUE: SELECIONA / JOGA     < VOLTAR' : 'SETAS ESCOLHER  ENTER JOGAR  ESC VOLTAR';
+    PixelFont.drawCentered(ctx, hint, VW / 2, VH - 12, WHITE);
+  }
+  drawCard(ctx, i, r) {
+    const id = this.ids[i], info = LevelManager.info[id] ?? { name: '...', world: id };
+    const open = this.isOpen(id), done = SaveData.isCleared(id), selected = i === this.cursor;
+    Gfx.rect(ctx, r.x, r.y, r.w, r.h, open ? [16, 24, 56, 240] : [20, 20, 28, 240]);
+    // miniatura: um pedaco do fundo da fase
+    const img = info.background && Assets.image(info.background);
+    const tw = 56, th = r.h - 6;
+    if (img) ctx.drawImage(img, Math.floor(img.width * 0.08), Math.floor(img.height * 0.3), tw * 2, th * 2, r.x + 3, r.y + 3, tw, th);
+    else Gfx.rect(ctx, r.x + 3, r.y + 3, tw, th, [40, 60, 110, 255]);
+    if (!open) Gfx.rect(ctx, r.x + 3, r.y + 3, tw, th, [0, 0, 0, 170]);
+    const tx = r.x + tw + 10;
+    PixelFont.draw(ctx, info.world, tx, r.y + 5, open ? YELLOW : GRAY);
+    PixelFont.draw(ctx, info.name, tx + 24, r.y + 5, open ? WHITE : GRAY);
+    if (done) {
+      PixelFont.draw(ctx, 'CONCLUIDA', tx, r.y + 18, [120, 255, 140, 255]);
+      PixelFont.draw(ctx, `MELHOR ${pad(SaveData.cleared[id], 6)}`, tx, r.y + 28, SOFT);
+    } else if (open) {
+      PixelFont.draw(ctx, 'NOVA!', tx, r.y + 18, CYAN);
+    } else {
+      const prev = this.ids[i - 1];
+      PixelFont.draw(ctx, 'BLOQUEADA', tx, r.y + 18, GRAY);
+      PixelFont.draw(ctx, `CONCLUA A ${LevelManager.info[prev]?.world ?? prev}`, tx, r.y + 28, GRAY);
+      // cadeado sobre a miniatura
+      const lx = r.x + 3 + tw / 2 - 5, ly = r.y + 16;
+      Gfx.outline(ctx, lx + 2, ly - 6, 6, 7, GRAY);
+      Gfx.rect(ctx, lx, ly, 10, 9, GRAY);
+    }
+    const border = selected ? (Math.floor(this.frame / 8) % 2 === 0 ? YELLOW : WHITE) : [70, 80, 120, 255];
+    Gfx.outline(ctx, r.x, r.y, r.w, r.h, border, selected ? 2 : 1);
   }
 }
 
@@ -357,7 +511,7 @@ export class LevelIntroScene extends Scene {
   }
   update() {
     if (this.error) {
-      if (Input.wasPressed('confirm') || Input.wasPressed('back')) this.game.changeScene(new TitleScene(this.game));
+      if (Input.wasPressed('confirm') || Input.wasPressed('back')) this.game.changeScene(new LevelSelectScene(this.game, this.levelId));
       return;
     }
     if (this.timer > 0) this.timer--;
@@ -430,7 +584,7 @@ export class GameplayScene extends Scene {
   /** Toque com o jogo pausado: "MENU PRINCIPAL" volta ao titulo; qualquer outro lugar continua. */
   onTap(x, y) {
     if (!this.paused) return;
-    if (y >= 136 && y <= 152) { Audio.stopMusic(); this.game.changeScene(new TitleScene(this.game)); }
+    if (y >= PAUSE_MENU_Y - 6 && y <= PAUSE_MENU_Y + 12) { Audio.stopMusic(); this.game.changeScene(new LevelSelectScene(this.game, this.level.id)); }
     else this.resume();
   }
   showHint(text, frames = 240) { this.hint = { text, timer: frames }; }
@@ -458,7 +612,7 @@ export class GameplayScene extends Scene {
     if (this.session.checkpointReached && this.stage.checkpoint) spawn = this.stage.checkpoint;
     this.player.placeAtTile(spawn.x, spawn.y);
     this.stage.camera.centerOn(this.player.centerX, this.stage.map.widthPx);
-    this.mugTimer = 180;
+    this.mugTimer = 360;                                             // primeira caneca ~6 s apos entrar
     this.playAreaMusic();
   }
 
@@ -470,7 +624,7 @@ export class GameplayScene extends Scene {
     const p = this.player, st = this.stage;
     if (!p.character.coffeeHurts || this.state !== 'playing' || p.mode !== 'normal') return;
     if (--this.mugTimer > 0) return;
-    this.mugTimer = 300 + Math.floor(Math.random() * 300);          // a cada 5 a 10 segundos
+    this.mugTimer = 480 + Math.floor(Math.random() * 360);          // a cada 8 a 14 segundos
     if (st.flagpole && p.centerX > st.flagpole.poleX - 128) return;  // perto do fim: deixa em paz
     if (st.entities.filter(e => e instanceof FallingMug && !e.removed).length >= 2) return;
     const cam = st.camera, map = st.map;
@@ -488,6 +642,7 @@ export class GameplayScene extends Scene {
       }
       return;
     }
+    this.mugTimer = 60;                                             // sem espaco agora: tenta de novo em 1 s
   }
   getStage(id) {
     if (!this.stages[id]) {
@@ -505,7 +660,7 @@ export class GameplayScene extends Scene {
   update() {
     if (this.state === 'paused') {
       if (Input.wasPressed('start')) this.resume();
-      else if (Input.wasPressed('back')) { Audio.stopMusic(); this.game.changeScene(new TitleScene(this.game)); }
+      else if (Input.wasPressed('back')) { Audio.stopMusic(); this.game.changeScene(new LevelSelectScene(this.game, this.level.id)); }
       return;
     }
     if (this.hint && --this.hint.timer <= 0) this.hint = null;
@@ -524,6 +679,7 @@ export class GameplayScene extends Scene {
     if (this.state === 'warping') return;
 
     this.stage.update(frozen);
+    if (!frozen) this.stage.resolvePlatforms();
     if (!frozen) this.updateMugs();
     if (!frozen && p.mode === 'normal') {
       this.stage.resolvePlayerInteractions();
@@ -604,15 +760,14 @@ export class GameplayScene extends Scene {
     this.state = 'cleared';
     this.timer = 150;
   }
+  /** Fase concluida: salva o progresso e volta para a escolha de fase (ja na proxima). */
   goToNextLevel() {
-    this.session.power = this.player.power;
-    this.session.checkpointReached = false;
-    const next = LevelManager.next(this.level.id);
-    if (next) this.game.changeScene(new LevelIntroScene(this.game, next));
-    else {
-      SaveData.submitScore(this.session.score);
-      this.game.changeScene(new EndingScene(this.game));
-    }
+    const id = this.level.id, next = LevelManager.next(id);
+    const allDoneBefore = LevelManager.order.every(x => SaveData.isCleared(x));
+    const firstTime = SaveData.clearLevel(id, this.session.score);
+    const allDone = LevelManager.order.every(x => SaveData.isCleared(x));
+    if (allDone && !allDoneBefore) { this.game.changeScene(new EndingScene(this.game)); return; }
+    this.game.changeScene(new LevelSelectScene(this.game, next ?? id, firstTime && next ? next : null));
   }
   onLifeLost() {
     this.session.lives--;
@@ -696,15 +851,20 @@ export class GameplayScene extends Scene {
       PixelFont.drawCentered(ctx, this.hint.text, VW / 2, 35, YELLOW, 1, true);
     }
     if (this.state === 'paused') {
-      Gfx.rect(ctx, 0, 0, VW, VH, [0, 0, 0, 140]);
-      PixelFont.drawCentered(ctx, 'PAUSA', VW / 2, 100, WHITE, 2, true);
+      // pausa com a lista de comandos (teclado ou toque)
+      Gfx.rect(ctx, 0, 0, VW, VH, [0, 0, 0, 170]);
+      PixelFont.drawCentered(ctx, 'PAUSA', VW / 2, 34, WHITE, 2, true);
+      const lines = this.game.touch ? TOUCH_CONTROLS : CONTROLS;
+      Gfx.rect(ctx, 10, 54, VW - 20, lines.length * 11 + 10, [10, 16, 40, 230]);
+      Gfx.outline(ctx, 10, 54, VW - 20, lines.length * 11 + 10, [80, 120, 200, 255]);
+      lines.forEach((line, i) => PixelFont.draw(ctx, line, 18, 60 + i * 11, WHITE));
       if (this.game.touch) {
-        PixelFont.drawCentered(ctx, 'TOQUE PARA CONTINUAR', VW / 2, 124, WHITE);
-        Gfx.outline(ctx, 66, 137, 124, 14, WHITE);
-        PixelFont.drawCentered(ctx, 'MENU PRINCIPAL', VW / 2, 141, WHITE);
+        PixelFont.drawCentered(ctx, 'TOQUE PARA CONTINUAR', VW / 2, PAUSE_MENU_Y - 14, YELLOW);
+        Gfx.outline(ctx, 66, PAUSE_MENU_Y - 4, 124, 14, WHITE);
+        PixelFont.drawCentered(ctx, 'ESCOLHER FASE', VW / 2, PAUSE_MENU_Y, WHITE);
       } else {
-        PixelFont.drawCentered(ctx, 'ENTER - CONTINUAR', VW / 2, 130, WHITE);
-        PixelFont.drawCentered(ctx, 'ESC - MENU PRINCIPAL', VW / 2, 142, WHITE);
+        PixelFont.drawCentered(ctx, 'ENTER - CONTINUAR', VW / 2, PAUSE_MENU_Y - 12, YELLOW);
+        PixelFont.drawCentered(ctx, 'ESC - ESCOLHER FASE', VW / 2, PAUSE_MENU_Y, WHITE);
       }
     }
   }
@@ -720,7 +880,9 @@ export class GameOverScene extends Scene {
     Audio.play('game_over');
   }
   update() {
-    if (--this.timer <= 0 || (this.timer < 240 && Input.wasPressed('confirm'))) this.game.changeScene(new TitleScene(this.game));
+    if (--this.timer <= 0 || (this.timer < 240 && Input.wasPressed('confirm'))) {
+      this.game.changeScene(new LevelSelectScene(this.game, this.game.session?.levelId));
+    }
   }
   draw(ctx) {
     Gfx.rect(ctx, 0, 0, VW, VH, BLACK);
@@ -740,7 +902,7 @@ export class EndingScene extends Scene {
     this.frame++;
     if (this.frame > 120 && Input.wasPressed('confirm')) {
       Audio.stopMusic();
-      this.game.changeScene(new TitleScene(this.game));
+      this.game.changeScene(new LevelSelectScene(this.game, LevelManager.order.at(-1)));
     }
   }
   draw(ctx) {

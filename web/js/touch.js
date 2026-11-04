@@ -125,6 +125,13 @@ export function setupTouch(game, canvas) {
       Input.touchTapped.add('fire');
       buzz(15);
     }
+    // arrastar o dedo nos menus (rola o texto do perfil)
+    const t = menuTaps.get(e.pointerId);
+    if (t && game.scene?.onDrag) {
+      const ly = t.ly ?? t.y0;
+      game.scene.onDrag(toGame(x, y).y - toGame(x, ly).y);
+      t.ly = y;
+    }
   });
 
   const release = e => {

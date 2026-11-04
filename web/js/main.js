@@ -11,6 +11,10 @@ const FRAME_COUNT = 11; // frames por folha de personagem
 const COMMON_IMAGES = [
   ...ALL_TILE_NAMES.map(n => `Tiles/overworld/${n}.png`),
   ...['ground', 'brick', 'hard', 'used'].map(n => `Tiles/underground/${n}.png`),
+  ...ALL_TILE_NAMES.map(n => `Tiles/neon/${n}.png`),
+  ...['coin', 'coin_spin', 'firewall', 'sudo_star', 'backup'].map(n => `Items/${n}_neon.png`),
+  'Enemies/bug_neon.png', 'Enemies/drone.png', 'Backgrounds/neon_far.png',
+  'Objects/spring.png', 'Objects/platform.png', 'Objects/checkpoint.png', 'Objects/spikes.png',
   'Enemies/bug.png', 'Enemies/virus.png', 'Enemies/virus_shell.png',
   'Items/coin.png', 'Items/coin_spin.png', 'Items/coffee.png', 'Items/firewall.png', 'Items/sudo_star.png',
   'Items/backup.png', 'Items/packet.png', 'Items/gem.png', 'Items/monster.png',
@@ -21,6 +25,16 @@ const COMMON_IMAGES = [
 ];
 
 // ---------------------------------------------------------------- personagens
+/**
+ * Regras de jogo de cada dev, usadas quando o characters.json nao traz os campos "powerups" / "coffeeHurts"
+ * (assim o perfil pode ser trocado inteiro sem perder a regra do David).
+ */
+const CHARACTER_RULES = {
+  dev01: { powerups: ['coffee', 'monster'] },
+  dev02: { powerups: ['gem'], coffeeHurts: true },     // David nao pode tomar cafe
+  dev03: { powerups: ['monster', 'coffee'] },
+};
+
 /** Le assets/Characters/characters.json (aceita linhas de comentario com //). */
 async function loadCharacters() {
   const txt = await Assets.loadText('Characters/characters.json');
@@ -36,15 +50,18 @@ async function loadCharacters() {
     // frases tipicas: "quotes": ["...", "..."] (ou "quote": "..." no formato antigo)
     quotes: [].concat(c.quotes ?? c.quote ?? []).filter(Boolean),
     // atributos do perfil: [{ "label": "CAFE", "value": 0..5 }]
-    stats: (c.stats ?? []).map(s => ({ label: String(s.label ?? '').slice(0, 10), value: Math.max(0, Math.min(5, s.value | 0)) })),
+    stats: (c.stats ?? []).map(s => ({ label: String(s.label ?? '').slice(0, 12), value: Math.max(0, Math.min(5, s.value | 0)) })),
     // item que faz virar Senior: um ou mais de "coffee", "monster", "gem" (sorteado a cada bloco)
-    powerups: [].concat(c.powerups ?? 'coffee').filter(k => ['coffee', 'monster', 'gem'].includes(k)),
+    powerups: [].concat(c.powerups ?? CHARACTER_RULES[c.id]?.powerups ?? 'coffee').filter(k => ['coffee', 'monster', 'gem'].includes(k)),
     // true: canecas de cafe caem do ceu e machucam (o David nao pode tomar cafe)
-    coffeeHurts: c.coffeeHurts === true,
+    coffeeHurts: (c.coffeeHurts ?? CHARACTER_RULES[c.id]?.coffeeHurts) === true,
     folder: (c.folder || `Characters/${c.id}`).replace(/\/$/, ''),
     color: parseHex(c.color, [224, 72, 72, 255]), enabled: c.enabled !== false,
   }));
-  for (const c of list) if (!c.powerups.length) c.powerups = ['coffee'];
+  for (const c of list) {
+    if (c.coffeeHurts) c.powerups = c.powerups.filter(k => k !== 'coffee');   // cafe nunca vira item dele
+    if (!c.powerups.length) c.powerups = [c.coffeeHurts ? 'gem' : 'coffee'];
+  }
   if (!list.length) {
     list.push({ id: 'dev01', name: 'DEV 01', role: 'Full Stack', stack: '', description: 'Personagem padrao.',
       folder: 'Characters/dev01', color: [224, 72, 72, 255], enabled: true, powerups: ['coffee'] });

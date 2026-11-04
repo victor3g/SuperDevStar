@@ -23,11 +23,13 @@
     "menu_select": "Sfx/menu_select.wav",
     "game_over": "Sfx/game_over.wav",
     "mug_fall": "Sfx/mug_fall.wav",
-    "mug_break": "Sfx/mug_break.wav"
+    "mug_break": "Sfx/mug_break.wav",
+    "spring": "Sfx/spring.wav"
   },
   "music": {
     "overworld": "Music/overworld.mp3",
     "underground": "Music/underground.mp3",
+    "neon": "Music/neon.mp3",
     "star": "Music/star.mp3",
     "title": "Music/title.mp3",
     "select": "Music/select.mp3",

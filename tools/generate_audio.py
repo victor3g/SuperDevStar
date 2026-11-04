@@ -259,6 +259,12 @@ def sfx_mug_break():
     return clink * 0.7 + splash * 0.6
 
 
+def sfx_spring():
+    # mola da fase 1-3: "boing" subindo
+    n = samples(0.32)
+    return square(slide(180, 900, n, 0.6), n, 0.25) * env(n, release=0.1) * 0.8
+
+
 SFX = {name[4:]: fn for name, fn in globals().items() if name.startswith("sfx_")}
 
 # =====================================================================
@@ -384,6 +390,25 @@ def song_underground():
                (render_voice(bass, eighth, "tri", gate=0.9), 0.45),
                (render_drums(drums, eighth), 0.30))
 
+
+
+def song_neon():
+    """Fase 1-3 NEON GRID: synthwave em La menor, arpejo rapido e baixo pulsando."""
+    eighth = 60 / 132 / 2
+    chords = [Am, F, C, G, Am, F, Dm, E]
+    lead = [
+        ("E5", 3), ("A5", 1), ("C6", 2), ("B5", 2),   ("A5", 3), ("G5", 1), ("F5", 2), ("E5", 2),
+        ("G5", 3), ("C6", 1), ("E6", 2), ("D6", 2),   ("B5", 4), ("G5", 2), ("-", 2),
+        ("E5", 2), ("A5", 2), ("C6", 2), ("E6", 2),   ("D6", 3), ("C6", 1), ("A5", 4),
+        ("F5", 2), ("A5", 2), ("D6", 2), ("C6", 2),   ("B5", 4), ("G#5", 2), ("E5", 2),
+    ]
+    arp = arpeggio(chords, 4, (0, 1, 2, 1, 0, 2, 1, 2))
+    bass = bass_line(chords, "R8R8R8R8", octave=2)
+    drums = ["k-h-s-h-", "k-hks-hh"] * 4
+    return mix((render_voice(lead, eighth, duty=0.25, gate=0.85, decay=0.2, sustain=0.6), 0.30),
+               (render_voice(arp, eighth, duty=0.125, gate=0.45), 0.14),
+               (render_voice(bass, eighth, "tri", gate=0.7), 0.42),
+               (render_drums(drums, eighth), 0.40))
 
 def song_star():
     eighth = 60 / 180 / 2

@@ -3,6 +3,7 @@
 import { TILE, VW, VH, Assets, Sprites, Gfx, PixelFont, Camera, WHITE, parseHex, Audio } from './core.js';
 import {
   Coin, Bug, Virus, Flagpole, Enemy, Item, Coffee, FallingMug, Firewall, SudoStar, Backup, CoinPop, BrickDebris, Layer,
+  MovingPlatform, Spring, Spikes, CheckpointPost, Drone,
 } from './entities.js';
 
 // ---------------------------------------------------------------- tiles
@@ -109,6 +110,7 @@ export function parseLevel(id, text) {
   const level = { id, name: 'HELLO WORLD', world: '1-1', time: 400, startArea: 'main', areas: {}, warps: [] };
   const getArea = name => (level.areas[name] ??= {
     id: name, theme: 'overworld', music: 'overworld', sky: [92, 148, 252, 255], rows: [], decor: [], backgrounds: [],
+    castle: 'datacenter',
   });
   let section = 'level', area = null, lineNo = 0;
 
@@ -143,6 +145,7 @@ export function parseLevel(id, text) {
       if (k === 'theme') area.theme = v.toLowerCase();
       else if (k === 'music') area.music = v;
       else if (k === 'sky') area.sky = parseHex(v, area.sky);
+      else if (k === 'castle') area.castle = v;     // decoracao do fim da fase (Decor/<nome>.png)
       else if (k === 'background') {
         const p = v.split(' ').filter(Boolean);
         area.backgrounds.push({ path: p[0], parallax: p[1] ? parseFloat(p[1]) : 0.25, y: p[2] ? parseInt(p[2], 10) : 0 });
@@ -170,13 +173,30 @@ export function levelImagePaths(level) {
   for (const a of Object.values(level.areas)) {
     for (const d of a.decor) paths.push(`Decor/${d.name}.png`);
     for (const b of a.backgrounds) paths.push(b.path);
-    if (a.rows.some(r => r.includes('D'))) paths.push('Decor/datacenter.png');
+    if (a.rows.some(r => r.includes('D'))) paths.push(`Decor/${a.castle}.png`);
   }
   return paths;
 }
 
 /** Ordem das fases em assets/Levels/levels.txt. */
 export const LevelManager = {
+  info: {},   // { id: { id, name, world, background } } lido do cabecalho de cada fase (tela de fases)
+  /** Le so o cabecalho das fases (nome e fundo) para a tela de escolha de fase. */
+  async loadInfo() {
+    await Promise.all(this.order.map(async id => {
+      if (this.info[id]) return;
+      const text = (await Assets.loadText(`Levels/${id}.txt`)) ?? '';
+      const get = key => text.match(new RegExp(String.raw`^\s*${key}\s*=\s*(.+?)\s*(//.*)?$`, 'm'))?.[1];
+      const bg = get('background')?.split(' ')[0];
+      this.info[id] = { id, name: get('name') ?? id, world: get('world') ?? id, background: bg };
+    }));
+    await Assets.loadImages(Object.values(this.info).map(i => i.background).filter(Boolean));
+  },
+  /** A fase esta liberada? A primeira sempre; as outras quando a anterior foi concluida. */
+  isUnlocked(id, isCleared) {
+    const i = this.order.indexOf(id);
+    return i === 0 || (i > 0 && isCleared(this.order[i - 1]));
+  },
   order: ['1-1'],
   async init() {
     const txt = await Assets.loadText('Levels/levels.txt');
@@ -277,7 +297,7 @@ export class Stage {
     }
     for (const d of data.decor) this.decor.push(new DecorInstance(d.name, d.tileX * TILE, (d.tileY + 1) * TILE, false, d.front));
     if (this.castleDoor) {
-      this.decor.push(new DecorInstance('datacenter', this.castleDoor.x * TILE + TILE / 2, (this.castleDoor.y + 1) * TILE, true, false));
+      this.decor.push(new DecorInstance(data.castle ?? 'datacenter', this.castleDoor.x * TILE + TILE / 2, (this.castleDoor.y + 1) * TILE, true, false));
     }
     this.flushSpawns();
   }
@@ -311,14 +331,45 @@ export class Stage {
       case 'g': this.spawn(new Bug(x * TILE, y * TILE, this.theme)); break;
       case 'k': this.spawn(new Virus(x * TILE, y * TILE, this.theme)); break;
       case 'P': this.playerSpawn = { x, y }; break;
-      case 'K': this.checkpoint = { x, y }; break;
+      case 'K': this.checkpoint = { x, y }; this.spawn(new CheckpointPost(x * TILE, y * TILE)); break;
+      // fase 1-3 (tema neon) - funcionam em qualquer fase
+      case 'J': this.spawn(new Spring(x * TILE, y * TILE)); break;
+      case '^': this.spawn(new Spikes(x * TILE, y * TILE)); break;
+      case 'd': this.spawn(new Drone(x * TILE, y * TILE)); break;
+      case '=': this.spawn(new MovingPlatform(x * TILE, y * TILE + 4, 'h', 64)); break;
+      case '|': this.spawn(new MovingPlatform(x * TILE, y * TILE + 4, 'v', 80)); break;
       case 'D': this.castleDoor = { x, y }; break;
     }
   }
 
   spawn(e) {
     e.stage = this;
+    e.applyTheme?.(this.theme);
     this.toAdd.push(e);
+  }
+
+  /**
+   * Plataformas e molas (entidades com platformTop): so seguram quem cai de cima.
+   * Chamado depois que o jogador e as entidades se moveram.
+   */
+  resolvePlatforms() {
+    const p = this.player;
+    for (const e of this.entities) {
+      if (e.removed || e.platformTop === undefined) continue;
+      e.rider = false;
+      if (p.mode !== 'normal' || p.vy < 0) continue;
+      const top = e.platformTop;
+      if (p.right <= e.left + 1 || p.left >= e.right - 1) continue;
+      if (p.prevBottom > top + 4 || p.bottom < top) continue;
+      p.y = top - p.h;
+      p.vy = 0;
+      p.onGround = true;
+      p.jumping = false;
+      p.jumpPose = false;
+      p.springRise = 0;
+      e.rider = true;
+      e.onLanded?.(p);
+    }
   }
   flushSpawns() {
     if (!this.toAdd.length) return;

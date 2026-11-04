@@ -471,3 +471,84 @@ save(quantize(fit_screen(ur, (330, 290, 958, 931)), 64), "Backgrounds/undergroun
 ts = load("ui_title_select_backgrounds_original.png")
 save(quantize(fit_screen(ts, (0, 0, 904, 864)), 64), "UI/title_background.png")
 save(quantize(fit_screen(ts, (916, 0, 905, 864)), 64), "UI/select_background.png")
+
+# =====================================================================
+# FASE 1-3 "NEON GRID" (tema neon)
+# =====================================================================
+def key_green_strict(a):
+    """Fundo verde puro ligado a borda (preserva verdes do desenho: folhas holograficas, capsula)."""
+    def is_bg(x):
+        r, g, b = x[..., 0], x[..., 1], x[..., 2]
+        return (g > 200) & (r < 90) & (b < 90) & (g > r * 2.2) & (g > b * 2.2)
+    out = key_flood(a, is_bg)
+    # franja verde do antisserrilhado na borda do desenho
+    r, g, b = out[..., 0], out[..., 1], out[..., 2]
+    edge = (out[..., 3] > 0) & (g > 180) & (r < 120) & (b < 120)
+    near = ndimage.binary_dilation(out[..., 3] == 0, iterations=2)
+    out[..., 3] = np.where(edge & near, 0, out[..., 3])
+    return out
+
+def tile16(src, box, rel, colors=32):
+    save(quantize(downscale(trim(crop(src, box)), 16, 16), colors), rel)
+
+nb = key_green(load("Sprites de Blocos Cyberpunk em Pixel Art.png"))
+tile16(nb, (61, 224, 261, 262), "Tiles/neon/ground.png")
+tile16(nb, (395, 224, 262, 262), "Tiles/neon/brick.png")
+qx, qw = 731, 767 / 3
+save(quantize(np.concatenate([downscale(crop(nb, (int(qx + i * qw), 224, int(qw), 261)), 16, 16) for i in range(3)], 1), 32),
+     "Tiles/neon/question.png")
+tile16(nb, (1558, 224, 242, 261), "Tiles/neon/used.png")
+tile16(nb, (1861, 224, 254, 262), "Tiles/neon/hard.png")
+
+# Tubos de energia = canos do tema neon (2 blocos de largura)
+tb = key_green(load("Tubos de Energia Ciano em Pixel Art.png"))
+vt = trim(crop(tb, (247, 98, 392, 696)))
+f = 32 / vt.shape[1]; seg = int(round(16 / f))
+vtop = quantize(downscale(vt[:seg], 32, 16), 24)
+mid = vt.shape[0] // 2 - seg // 2
+vbody = quantize(downscale(vt[mid:mid + seg], 32, 16), 24)
+save(vtop[:, :16], "Tiles/neon/pipe_top_left.png"); save(vtop[:, 16:], "Tiles/neon/pipe_top_right.png")
+save(vbody[:, :16], "Tiles/neon/pipe_left.png"); save(vbody[:, 16:], "Tiles/neon/pipe_right.png")
+ht = trim(crop(tb, (879, 287, 702, 352)))
+f = 32 / ht.shape[0]; seg = int(round(16 / f))
+hmouth = quantize(downscale(ht[:, :seg], 16, 32), 24)
+hmid = ht.shape[1] // 2 - seg // 2
+hbody = quantize(downscale(ht[:, hmid:hmid + seg], 16, 32), 24)
+save(hmouth[:16], "Tiles/neon/hpipe_mouth_top.png"); save(hmouth[16:], "Tiles/neon/hpipe_mouth_bottom.png")
+save(hbody[:16], "Tiles/neon/hpipe_body_top.png"); save(hbody[16:], "Tiles/neon/hpipe_body_bottom.png")
+
+# Itens do tema neon: CPU (moeda), escudo (Firewall), asterisco (Sudo Star), capsula (Backup)
+ic = key_green_strict(load("Ícones Pixel Neon_ CPU, Escudos e Energia.png"))
+strip(ic, [(63, 251, 203, 193)] * 3, 16, 16, "Items/coin_neon.png", largest_only=True)
+strip(ic, [(63, 251, 203, 193)] * 4, 16, 16, "Items/coin_spin_neon.png", largest_only=True)
+strip(ic, [(int(329 + i * 742 / 4), 249, int(742 / 4), 196) for i in range(4)], 16, 16, "Items/firewall_neon.png", scale='shared')
+strip(ic, [(int(1127 + i * 745 / 4), 247, int(745 / 4), 197) for i in range(4)], 16, 16, "Items/sudo_star_neon.png", scale='shared')
+strip(ic, [(1939, 243, 164, 201)], 16, 16, "Items/backup_neon.png")
+
+# Inimigos: aranha (Bug do tema neon) e drone voador
+sd = key_green(load("Sprites de Aranha e Drone Neon.png"))
+strip(sd, [(44, 230, 312, 235), (403, 230, 281, 226), (714, 326, 326, 130)], 16, 16, "Enemies/bug_neon.png",
+      scale='shared', scale_from=[0, 1], largest_only=True)
+strip(sd, [(1106, 248, 357, 178), (1473, 219, 309, 201), (1820, 229, 288, 206)], 24, 16, "Enemies/drone.png",
+      scale='shared', bottom=False)
+
+# Objetos: mola, plataforma flutuante, poste de checkpoint, espinhos
+kt = key_green_strict(load("Kit de Sprites Sci-Fi Neon em Pixel Art.png"))
+strip(kt, [(298, 326, 216, 234), (48, 408, 225, 152)], 16, 16, "Objects/spring.png", scale='shared', largest_only=True)
+pl = trim(keep_big_components(crop(kt, (589, 350, 630, 188)), 0.05))
+save(quantize(downscale(pl, 48, pl.shape[0] * 48 / pl.shape[1]), 32), "Objects/platform.png")
+strip(kt, [(1283, 161, 219, 403), (1546, 161, 220, 403)], 16, 32, "Objects/checkpoint.png", scale='shared', largest_only=True)
+strip(kt, [(1857, 347, 272, 217)], 16, 16, "Objects/spikes.png")
+
+# Decoracao: planta holografica, terminal e o portal (fim da fase, no lugar do Data Center)
+dk = key_green_strict(load("Plant Holográfica, Terminal e Portal Neon.png"))
+for name, box, w in [("holo_plant", (85, 285, 355, 485), 24), ("terminal", (500, 290, 485, 478), 32),
+                     ("portal", (1040, 55, 681, 752), 72)]:
+    c = trim(keep_big_components(crop(dk, box), 0.002))
+    save(quantize(downscale(c, w, c.shape[0] * w / c.shape[1]), 48), f"Decor/{name}.png")
+
+# Fundo da fase: paisagem neon com 240 de altura, espelhada para repetir sem emenda
+nk = load("Paisagem Cyberpunk Neon em Pixel Art.png")
+nw = int(round(nk.shape[1] * 240 / nk.shape[0]))
+neon = downscale(nk, nw, 240); neon[..., 3] = 255
+save(quantize(np.concatenate([neon, neon[:, ::-1]], 1), 64), "Backgrounds/neon_far.png")

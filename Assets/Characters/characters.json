@@ -5,10 +5,10 @@
 // Campos do perfil (tela de selecao). Pode usar acentos: o jogo converte para a fonte pixelada.
 //   name        nome no placar e no perfil (ate ~10 letras)
 //   role        cargo             stack     tecnologias / sistemas
-//   description habitos e jeitao (ate ~110 letras para caber inteiro no perfil)
+//   description habitos e jeitao (texto longo rola sozinho no perfil)
 //   superpower  o que a pessoa faz de melhor     weakness  o que mais irrita
 //   quotes      frases tipicas (uma ou mais)
-//   stats       ate 4 atributos de 1 a 5 (rotulo com ate 10 letras)
+//   stats       ate 4 atributos de 1 a 5 (rotulo com ate 12 letras)
 //   color       cor tematica (usada enquanto nao ha sprite)
 //   powerups    item que faz virar Senior: "coffee", "monster" e/ou "gem" (com mais de um, sorteia a cada bloco)
 //   coffeeHurts true = canecas de cafe caem do ceu e machucam (quem nao pode tomar cafe)
@@ -18,12 +18,12 @@
     {
       "id": "dev01",
       "name": "MARIANA",
-      "role": "Front-end",
+      "role": "Front-end Developer",
       "stack": "HTML / JavaScript",
-      "description": "Café de garrafa sem açúcar, Monster branco e rap de rapper bonitão. Quando dá pau em produção, ri pra não chorar.",
-      "superpower": "Faz piada de qualquer situação difícil e deixa o clima leve.",
-      "weakness": "CornoJOB de copia e cola.",
-      "quotes": ["Na minha máquina funciona!", "Aí é mais caro!"],
+      "description": "Movida a Monster branco e café sem açúcar, embala o código ao som de rappers bonitões. Se der pau em produção, a risada é garantida pra aliviar o clima.",
+      "superpower": "Transforma qualquer caos ou treta do sistema em piada instantânea.",
+      "weakness": "Tarefas repetitivas e nojentas estilo 'CornoJOB' de copiar e colar.",
+      "quote": "Ai é mais caro! (Mas na minha máquina funciona...)",
       "stats": [
         { "label": "CAFÉ", "value": 5 },
         { "label": "GAMBIARRA", "value": 4 },
@@ -38,22 +38,22 @@
     {
       "id": "dev02",
       "name": "DAVID",
-      "role": "QA",
-      "stack": "Petros e Brapoio",
-      "description": "Zero cafeína e alérgico a abacaxi. Resolve tudo em silêncio; se dá pau em produção, vira detetive de logs.",
-      "superpower": "Explica qualquer coisa difícil de forma simples.",
-      "weakness": "Usuário que não sabe o que quer.",
-      "quotes": ["Deixa que eu resolvo", "Yasss"],
+      "role": "QA Analyst",
+      "stack": "Petros / Brapoio",
+      "description": "Zero cafeína, 100% foco e alergia mortal a abacaxi. Resolve as tretas no absoluto silêncio enquanto vasculha até a última linha de log.",
+      "superpower": "Traduz até a regra de negócio mais bizarra para uma linguagem simples que qualquer um entende.",
+      "weakness": "Usuário indeciso que não sabe o que quer do sistema.",
+      "quote": "Deixa que eu resolvo... Yasss!",
       "stats": [
         { "label": "FOCO", "value": 5 },
         { "label": "VELOCIDADE", "value": 4 },
-        { "label": "DOCS", "value": 4 },
+        { "label": "DOCUMENTAÇÃO", "value": 4 },
         { "label": "PACIÊNCIA", "value": 3 }
       ],
       "powerups": ["gem"],
       "coffeeHurts": true,
       "folder": "Characters/dev02",
-      "color": "#3C78D8",
+      "color": "#3B82F6",
       "enabled": true
     },
     {
@@ -64,7 +64,9 @@
       "description": "Dados e full-stack. Toca piano via MIDI em Python e cria seus próprios mundos 2D.",
       "superpower": "Sobe pipeline ou automação do zero antes do café terminar.",
       "weakness": "Loop infinito de refatoração e de mecânicas novas.",
-      "quotes": ["Vou automatizar isso aqui rapidinho."],
+      "quotes": [
+        "Vou automatizar isso aqui rapidinho."
+      ],
       "stats": [
         { "label": "AUTOMAÇÃO", "value": 5 },
         { "label": "PIPELINE", "value": 5 },

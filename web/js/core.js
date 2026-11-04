@@ -466,11 +466,22 @@ export class GameSession {
   }
 }
 
-/** Recorde salvo no navegador (localStorage). */
+/** Recorde e progresso das fases, salvos no navegador (localStorage). */
 export const SaveData = {
   topScore: 0,
+  cleared: {},          // { '1-1': melhor pontuacao ao concluir }
   load() {
     try { this.topScore = parseInt(localStorage.getItem('superdevstar.topscore') ?? '0', 10) || 0; } catch { /* modo privado */ }
+    try { this.cleared = JSON.parse(localStorage.getItem('superdevstar.cleared') ?? '{}') || {}; } catch { this.cleared = {}; }
+  },
+  isCleared(id) { return id in this.cleared; },
+  /** Fase concluida: guarda o melhor resultado. Retorna true se foi a primeira vez. */
+  clearLevel(id, score) {
+    const first = !this.isCleared(id);
+    this.cleared[id] = Math.max(this.cleared[id] ?? 0, score);
+    try { localStorage.setItem('superdevstar.cleared', JSON.stringify(this.cleared)); } catch { /* modo privado */ }
+    this.submitScore(score);
+    return first;
   },
   submitScore(score) {
     if (score <= this.topScore) return;

@@ -101,16 +101,22 @@ Cada personagem é um dev de verdade, um amigo nosso. Todos têm a mesma física
 
 ## Fases
 
+Depois de escolher o dev, você escolhe a fase. Cada fase é independente (começa com 3 vidas, Júnior e 0 pontos),
+mas elas seguem a ordem: concluir uma libera a próxima. O progresso e o melhor resultado de cada fase ficam salvos no navegador.
+
 | | |
 |---|---|
 | **1-1 HELLO WORLD**: a cidade da tecnologia à noite, com sala bônus secreta no subsolo | **1-2 LEGACY CODE**: dentro da sala de servidores, com teto de código legado, túnel cheio de bugs e saída pelo duto |
 | <img src="docs/images/screen-blocks.png" alt="Fase 1-1"> | <img src="docs/images/screen-level2.png" alt="Fase 1-2"> |
+| **1-3 NEON GRID**: a cidade virtual em neon, com molas, plataformas flutuantes, espinhos, aranhas, drones e o portal no fim | |
+| <img src="docs/images/screen-level3.png" alt="Fase 1-3"> | |
 
 ## Funcionalidades
 
 - 🕹️ **Física fiel ao Super Mario Bros** (valores originais do NES, rodando a 60 passos por segundo)
-- ☕ **3 formas**: Júnior → Sênior (Café, Monster ou Gema rosa) → Firewall (atira pacotes de dados); Sudo Star para invencibilidade
-- 🐞 **Inimigos**: Bug (esmagável) e Vírus (vira cápsula chutável, com combo de pontos)
+- ☕ **3 formas**: Júnior → Sênior (Café, Monster ou Gema rosa) → Firewall (levando dano, perde só o Firewall) (atira pacotes de dados); Sudo Star para invencibilidade
+- 🐞 **Inimigos**: Bug (esmagável), Vírus (vira cápsula chutável, com combo de pontos), Aranha e Drone voador (fase 1-3)
+- 🌀 **Fase neon**: molas, plataformas flutuantes, espinhos e checkpoint com poste que acende
 - 🧱 Blocos `?`, tijolos quebráveis, bloco de várias moedas e blocos invisíveis
 - 🚇 **Canos** com sala bônus, checkpoint no meio da fase e "hurry up" quando o tempo aperta
 - 🚩 **Fim de fase clássico**: pontos pela altura no mastro, contagem do tempo e fogos de artifício
@@ -118,7 +124,7 @@ Cada personagem é um dev de verdade, um amigo nosso. Todos têm a mesma física
 - 🪪 **Perfil de cada dev**: cargo, stack, atributos, superpoder, ponto fraco e frase típica
 - 📱 **Celular em tela cheia, sem botões**: analógico invisível no lado esquerdo, toque e deslize no direito.
   Zoom bloqueado; pode ser instalado na tela inicial como app.
-- 🎵 **Trilha sonora 8-bit original**: 7 músicas e 23 efeitos sintetizados por código, no estilo do chip do NES
+- 🎵 **Trilha sonora 8-bit original**: 8 músicas e 24 efeitos sintetizados por código, no estilo do chip do NES
 - 🎮 Teclado e **controle de videogame** (Xbox / PlayStation)
 - 🏆 Recorde salvo no navegador
 
@@ -131,7 +137,7 @@ Cada personagem é um dev de verdade, um amigo nosso. Todos têm a mesma física
 | Correr | segure X / Shift | X |
 | Atirar pacote (com Firewall) | X / Shift / C | X |
 | Agachar / entrar no cano | ↓ | ↓ |
-| Pausa / confirmar | Enter | Start |
+| Pausa (mostra os comandos) / confirmar | Enter | Start |
 | Voltar ao menu | Esc | B |
 | Tela cheia / som | F / M | |
 

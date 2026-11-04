@@ -1,6 +1,8 @@
 # Formato das fases
 
 As fases ficam em `Assets/Levels/<id>.txt`; a ordem delas está em `Assets/Levels/levels.txt`.
+Essa ordem define a tela **ESCOLHA A FASE**: a primeira já vem liberada e cada fase concluída libera a próxima.
+Cada fase é independente: o jogador começa nela com 3 vidas, Júnior e 0 pontos.
 É texto puro: dá para editar no VS Code com uma fonte monoespaçada.
 
 ```
@@ -15,6 +17,7 @@ theme = overworld        // pasta de tiles: Tiles/<theme>/
 music = overworld        // Audio/Music/<music>.wav
 sky   = #5C94FC          // cor do ceu
 background = Backgrounds/overworld_far.png 0.25 0   // imagem  parallax  y
+castle = datacenter      // decoracao do fim da fase (Decor/<nome>.png); a 1-3 usa portal
 
 [decor main]
 cloud_small 8 3          // Decor/cloud_small.png, x=8, base no fundo da linha 3
@@ -57,7 +60,18 @@ Linhas curtas são completadas com vazio.
 | `P` | início do jogador (em pé neste tile) |
 | `K` | checkpoint: passou desta coluna, renasce aqui |
 | `F` | **topo** do mastro; ele desce até o primeiro bloco sólido abaixo |
-| `D` | porta do Data Center (o castelo é desenhado centralizado aqui) |
+| `D` | porta do Data Center (o castelo é desenhado centralizado aqui; troque com `castle =` na área) |
+| `J` | mola: lança alto (segurando o pulo, mais alto ainda) |
+| `^` | espinhos de neon (machucam ao encostar) |
+| `d` | drone voador (pode ser pisado ou derrubado com pacote) |
+| `=` | plataforma flutuante que vai e volta na horizontal (3 blocos; o caractere marca a ponta esquerda) |
+| `\|` | plataforma flutuante que sobe e desce |
+
+### Regras de dificuldade
+
+* Nenhum degrau com mais de **3 blocos** de altura, a não ser que haja uma mola antes dele.
+* Buracos sem plataforma têm no máximo **3 blocos** de largura.
+* O pulo alcança cerca de 4,5 blocos parado e 5 correndo; a mola alcança cerca de 7 (9 segurando o pulo).
 
 ## Warps (canos)
 
