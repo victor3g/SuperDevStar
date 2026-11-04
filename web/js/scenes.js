@@ -4,7 +4,7 @@ import {
   WHITE, YELLOW, BLACK, pad, darken,
 } from './core.js';
 import { Stage, LevelManager } from './world.js';
-import { Player, Frame, WALK_CYCLE, ScorePopup, Explosion } from './entities.js';
+import { Player, Frame, WALK_CYCLE, ScorePopup, Explosion, FallingMug } from './entities.js';
 
 class Scene {
   constructor(game) { this.game = game; }
@@ -407,6 +407,9 @@ export class GameplayScene extends Scene {
     this.warp = null;
     this.hint = null;          // { text, timer } mensagem curta no topo da tela
     this.lastPower = null;
+    this.growthItemName = 'CAFE'; // ultimo item que fez virar Senior (cafe, Monster, gema...)
+    this.mugTimer = 0;             // proxima caneca de cafe caindo (so personagens com coffeeHurts)
+    this.mugHintShown = false;
     // Trocou de app / aba: pausa sozinho.
     this.onVisibility = () => { if (document.hidden && this.state === 'playing') this.pause(); };
   }
@@ -438,7 +441,7 @@ export class GameplayScene extends Scene {
     if (this.lastPower !== null && p.power > this.lastPower) {
       if (p.power === PowerState.Fire) {
         this.showHint(this.game.touch ? 'FIREWALL! DESLIZE O DEDO PARA ATIRAR' : 'FIREWALL! APERTE X PARA ATIRAR', 300);
-      } else if (p.power === PowerState.Big) this.showHint('CAFE! AGORA VOCE E SENIOR');
+      } else if (p.power === PowerState.Big) this.showHint(`${this.growthItemName}! AGORA VOCE E SENIOR`);
     }
     this.lastPower = p.power;
   }
@@ -455,7 +458,36 @@ export class GameplayScene extends Scene {
     if (this.session.checkpointReached && this.stage.checkpoint) spawn = this.stage.checkpoint;
     this.player.placeAtTile(spawn.x, spawn.y);
     this.stage.camera.centerOn(this.player.centerX, this.stage.map.widthPx);
+    this.mugTimer = 180;
     this.playAreaMusic();
+  }
+
+  /**
+   * Evento do David (personagem com "coffeeHurts"): de tempos em tempos uma caneca de cafe cai
+   * perto dele, um pouco a frente de onde ele esta indo. Encostar machuca, entao e preciso desviar.
+   */
+  updateMugs() {
+    const p = this.player, st = this.stage;
+    if (!p.character.coffeeHurts || this.state !== 'playing' || p.mode !== 'normal') return;
+    if (--this.mugTimer > 0) return;
+    this.mugTimer = 300 + Math.floor(Math.random() * 300);          // a cada 5 a 10 segundos
+    if (st.flagpole && p.centerX > st.flagpole.poleX - 128) return;  // perto do fim: deixa em paz
+    if (st.entities.filter(e => e instanceof FallingMug && !e.removed).length >= 2) return;
+    const cam = st.camera, map = st.map;
+    for (let tries = 0; tries < 6; tries++) {
+      const aim = p.centerX + p.vx * 40 + Math.random() * 72 - 28;
+      const cx = Math.max(cam.x + 16, Math.min(cam.x + VW - 16, aim));
+      const tx = Math.floor(cx / 16);
+      let ty = 3;                                                   // abaixo do placar
+      while (ty < map.height && map.isSolid(tx, ty)) ty++;          // subsolo: comeca abaixo do teto
+      if (ty * 16 > p.top - 32) continue;                           // sem espaco acima do jogador
+      st.spawn(new FallingMug(tx * 16 + 8, ty * 16));
+      if (!this.mugHintShown) {
+        this.mugHintShown = true;
+        this.showHint(`${p.character.name} NAO PODE TOMAR CAFE! DESVIE`, 240);
+      }
+      return;
+    }
   }
   getStage(id) {
     if (!this.stages[id]) {
@@ -492,6 +524,7 @@ export class GameplayScene extends Scene {
     if (this.state === 'warping') return;
 
     this.stage.update(frozen);
+    if (!frozen) this.updateMugs();
     if (!frozen && p.mode === 'normal') {
       this.stage.resolvePlayerInteractions();
       this.checkFlagpole();

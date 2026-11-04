@@ -6,7 +6,7 @@
 
 **Um plataforma no estilo Super Mario Bros onde os heróis são devs e os inimigos são bugs.**
 
-Corra pela cidade da tecnologia, tome café para virar Sênior, ative o Firewall,
+Corra pela cidade da tecnologia, tome café (ou Monster) para virar Sênior, ative o Firewall,
 esmague bugs, chute vírus e faça o deploy no Data Center antes do tempo acabar.
 
 🎮 **Jogue no navegador, no computador ou no celular. Sem instalar nada.**
@@ -28,7 +28,7 @@ inimigos e combos de pontos. Tudo foi transportado para o mundo da tecnologia:
 | No Mario | No Super Dev Star |
 |---|---|
 | Mario pequeno / grande | **Dev Júnior** / **Dev Sênior** |
-| Cogumelo | **Café** |
+| Cogumelo | **Café**, **Monster** ou **Gema rosa** (cada dev tem o seu) |
 | Flor de fogo | **Firewall**: atira pacotes de dados |
 | Estrela | **Sudo Star**: invencibilidade de administrador |
 | Cogumelo 1UP | **Backup** (disquete) |
@@ -58,7 +58,7 @@ inimigos e combos de pontos. Tudo foi transportado para o mundo da tecnologia:
 
 ## Personagens
 
-Cada personagem é um dev de verdade, um amigo nosso. Todos jogam igual; muda o visual e a história.
+Cada personagem é um dev de verdade, um amigo nosso. Todos têm a mesma física; muda o visual, a história e o item de poder.
 
 <div align="center">
 <img src="docs/images/character-mariana.png" alt="Mariana: retrato, Júnior, Sênior e Firewall" width="720">
@@ -66,6 +66,7 @@ Cada personagem é um dev de verdade, um amigo nosso. Todos jogam igual; muda o 
 **MARIANA**, Front-end · HTML / JavaScript
 <br><sub>Superpoder: faz piada de qualquer situação difícil e deixa o clima leve.</sub>
 <br><sub><i>"Na minha máquina funciona!" · "Aí é mais caro!"</i></sub>
+<br><sub>Vira Sênior com café ou Monster (sorteado a cada bloco). O Victor também.</sub>
 
 <br><br>
 
@@ -74,6 +75,15 @@ Cada personagem é um dev de verdade, um amigo nosso. Todos jogam igual; muda o 
 **DAVID**, QA · Petros e Brapoio
 <br><sub>Superpoder: explica qualquer coisa difícil de forma simples.</sub>
 <br><sub><i>"Deixa que eu resolvo" · "Yasss"</i></sub>
+<br><sub>☕🚫 Não pode tomar café: vira Sênior com a <b>gema rosa</b> e precisa <b>desviar das canecas de café</b> que caem do céu.</sub>
+
+<br><br>
+
+<img src="docs/images/character-victor.png" alt="Victor: retrato, Júnior, Sênior e Firewall" width="720">
+
+**VICTOR**, Desenvolvedor / Dados · Python / React / PowerBI
+<br><sub>Superpoder: sobe qualquer pipeline ou automação do zero antes do café terminar.</sub>
+<br><sub><i>"Vou automatizar isso aqui rapidinho."</i></sub>
 </div>
 
 <br>
@@ -99,15 +109,16 @@ Cada personagem é um dev de verdade, um amigo nosso. Todos jogam igual; muda o 
 ## Funcionalidades
 
 - 🕹️ **Física fiel ao Super Mario Bros** (valores originais do NES, rodando a 60 passos por segundo)
-- ☕ **3 formas**: Júnior → Sênior (Café) → Firewall (atira pacotes de dados); Sudo Star para invencibilidade
+- ☕ **3 formas**: Júnior → Sênior (Café, Monster ou Gema rosa) → Firewall (atira pacotes de dados); Sudo Star para invencibilidade
 - 🐞 **Inimigos**: Bug (esmagável) e Vírus (vira cápsula chutável, com combo de pontos)
 - 🧱 Blocos `?`, tijolos quebráveis, bloco de várias moedas e blocos invisíveis
 - 🚇 **Canos** com sala bônus, checkpoint no meio da fase e "hurry up" quando o tempo aperta
 - 🚩 **Fim de fase clássico**: pontos pela altura no mastro, contagem do tempo e fogos de artifício
+- ☕ **Evento do David**: canecas de café caem do céu (com aviso) e machucam; dá para desviar ou destruir com o Firewall
 - 🪪 **Perfil de cada dev**: cargo, stack, atributos, superpoder, ponto fraco e frase típica
 - 📱 **Celular em tela cheia, sem botões**: analógico invisível no lado esquerdo, toque e deslize no direito.
   Zoom bloqueado; pode ser instalado na tela inicial como app.
-- 🎵 **Trilha sonora 8-bit original**: 7 músicas e 21 efeitos sintetizados por código, no estilo do chip do NES
+- 🎵 **Trilha sonora 8-bit original**: 7 músicas e 23 efeitos sintetizados por código, no estilo do chip do NES
 - 🎮 Teclado e **controle de videogame** (Xbox / PlayStation)
 - 🏆 Recorde salvo no navegador
 
@@ -207,7 +218,7 @@ SuperDevStar/
 
 | Quero… | Como |
 |---|---|
-| Adicionar um amigo como personagem | 4 imagens em `Assets/Characters/<id>/` + um bloco em `characters.json`. Veja [docs/ASSETS.md](docs/ASSETS.md) |
+| Adicionar um amigo como personagem | 4 imagens em `Assets/Characters/<id>/` + um bloco em `characters.json` (o campo `powerups` escolhe o item: `coffee`, `monster`, `gem`; `coffeeHurts: true` liga as canecas caindo). Veja [docs/ASSETS.md](docs/ASSETS.md) |
 | Criar uma fase nova | Um arquivo de texto em `Assets/Levels/`, onde cada letra é um bloco. Veja [docs/LEVEL_FORMAT.md](docs/LEVEL_FORMAT.md) |
 | Mudar sons e músicas | Edite `tools/generate_audio.py` e gere de novo, ou aponte arquivos próprios no `Assets/Audio/audio.json`. Veja [docs/PUBLICAR_WEB.md](docs/PUBLICAR_WEB.md) |
 | Converter artes geradas por IA | Coloque em `Imagens Geradas/` e use `tools/convert_generated_art.py` |

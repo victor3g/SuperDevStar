@@ -2,7 +2,7 @@
 // Equivale a pasta World/ da versao C#.
 import { TILE, VW, VH, Assets, Sprites, Gfx, PixelFont, Camera, WHITE, parseHex, Audio } from './core.js';
 import {
-  Coin, Bug, Virus, Flagpole, Enemy, Item, Coffee, Firewall, SudoStar, Backup, CoinPop, BrickDebris, Layer,
+  Coin, Bug, Virus, Flagpole, Enemy, Item, Coffee, FallingMug, Firewall, SudoStar, Backup, CoinPop, BrickDebris, Layer,
 } from './entities.js';
 
 // ---------------------------------------------------------------- tiles
@@ -454,7 +454,12 @@ export class Stage {
         this.scene.collectCoin(tx * TILE + 8, ty * TILE, false);
         break;
       case Content.PowerUp:
-        emerge(player.isBig ? new Firewall(tx * TILE, ty * TILE) : new Coffee(tx * TILE, ty * TILE));
+        if (player.isBig) emerge(new Firewall(tx * TILE, ty * TILE));
+        else {
+          // cada dev tem o seu item: cafe, Monster ou gema rosa (sorteado quando ha mais de um)
+          const kinds = player.character.powerups ?? ['coffee'];
+          emerge(new Coffee(tx * TILE, ty * TILE, kinds[Math.floor(Math.random() * kinds.length)]));
+        }
         break;
       case Content.Star: emerge(new SudoStar(tx * TILE, ty * TILE)); break;
       case Content.OneUp: emerge(new Backup(tx * TILE, ty * TILE)); break;
