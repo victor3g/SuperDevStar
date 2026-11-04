@@ -13,7 +13,7 @@ const COMMON_IMAGES = [
   ...['ground', 'brick', 'hard', 'used'].map(n => `Tiles/underground/${n}.png`),
   'Enemies/bug.png', 'Enemies/virus.png', 'Enemies/virus_shell.png',
   'Items/coin.png', 'Items/coin_spin.png', 'Items/coffee.png', 'Items/firewall.png', 'Items/sudo_star.png',
-  'Items/backup.png', 'Items/packet.png',
+  'Items/backup.png', 'Items/packet.png', 'Items/gem.png', 'Items/monster.png',
   'Effects/brick_debris.png', 'Effects/explosion.png', 'Effects/firework.png',
   'Objects/flagpole.png', 'Objects/flagpole_top.png', 'Objects/flag.png',
   'UI/logo.png', 'UI/title_background.png', 'UI/select_background.png', 'UI/hud_coin.png',
@@ -37,12 +37,17 @@ async function loadCharacters() {
     quotes: [].concat(c.quotes ?? c.quote ?? []).filter(Boolean),
     // atributos do perfil: [{ "label": "CAFE", "value": 0..5 }]
     stats: (c.stats ?? []).map(s => ({ label: String(s.label ?? '').slice(0, 10), value: Math.max(0, Math.min(5, s.value | 0)) })),
+    // item que faz virar Senior: um ou mais de "coffee", "monster", "gem" (sorteado a cada bloco)
+    powerups: [].concat(c.powerups ?? 'coffee').filter(k => ['coffee', 'monster', 'gem'].includes(k)),
+    // true: canecas de cafe caem do ceu e machucam (o David nao pode tomar cafe)
+    coffeeHurts: c.coffeeHurts === true,
     folder: (c.folder || `Characters/${c.id}`).replace(/\/$/, ''),
     color: parseHex(c.color, [224, 72, 72, 255]), enabled: c.enabled !== false,
   }));
+  for (const c of list) if (!c.powerups.length) c.powerups = ['coffee'];
   if (!list.length) {
     list.push({ id: 'dev01', name: 'DEV 01', role: 'Full Stack', stack: '', description: 'Personagem padrao.',
-      folder: 'Characters/dev01', color: [224, 72, 72, 255], enabled: true });
+      folder: 'Characters/dev01', color: [224, 72, 72, 255], enabled: true, powerups: ['coffee'] });
   }
   // Personagens desativados ("enabled": false) aparecem como "EM BREVE" e nao carregam imagens.
   await Assets.loadImages(list.filter(c => c.enabled).flatMap(c => ['small', 'big', 'fire', 'portrait'].map(f => `${c.folder}/${f}.png`)));

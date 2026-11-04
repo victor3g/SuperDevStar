@@ -21,7 +21,9 @@
     "firework": "Sfx/firework.wav",
     "menu_move": "Sfx/menu_move.wav",
     "menu_select": "Sfx/menu_select.wav",
-    "game_over": "Sfx/game_over.wav"
+    "game_over": "Sfx/game_over.wav",
+    "mug_fall": "Sfx/mug_fall.wav",
+    "mug_break": "Sfx/mug_break.wav"
   },
   "music": {
     "overworld": "Music/overworld.mp3",

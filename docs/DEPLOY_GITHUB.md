@@ -109,6 +109,7 @@ O arquivo `.github/workflows/deploy-pages.yml` roda no GitHub a cada `push` na b
 | Sintoma | Solução |
 |---|---|
 | A aba **Actions** mostra erro "Pages not enabled" | Faça o Passo 4 e rode o Passo 5 de novo |
+| O deploy deu certo mas o site continua com a versão antiga | Provavelmente alguém usou **"Re-run"** numa execução antiga: isso republica o commit antigo por cima. Use sempre **Actions → Publicar jogo no GitHub Pages → Run workflow** (branch `main`). A versão atual do workflow recusa esse "Re-run" com um aviso |
 | O link dá 404 | Espere 1–2 minutos após a Action ficar verde; confira se o endereço termina com `/super-dev-star/` |
 | Imagens não aparecem | Os nomes de arquivo diferenciam maiúsculas de minúsculas no servidor (`Logo.png` ≠ `logo.png`) |
 | `gh: command not found` | Feche e abra o terminal; ou use o GitHub Desktop (https://desktop.github.com), que também não pede administrador |

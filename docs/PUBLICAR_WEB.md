@@ -52,7 +52,7 @@ Para atualizar: gere o zip de novo e, na página do projeto, troque o arquivo em
 
 ## Sons
 
-Todos os sons (21 efeitos e 7 músicas) são **gerados por código** em `tools/generate_audio.py`.
+Todos os sons (23 efeitos e 7 músicas) são **gerados por código** em `tools/generate_audio.py`.
 É um sintetizador no estilo do chip do NES, e todas as melodias são originais (sem direitos autorais de terceiros).
 
 Para mudar um som, edite a função dele no script e gere de novo:

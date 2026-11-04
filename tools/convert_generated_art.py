@@ -156,14 +156,15 @@ def remove_pole(fr):
     fr = keep_big_components(fr, 0.03)
     return fr, (x0 + x1) / 2.0
 
-def build_character(src_name, frames, keyer, cell_h, out_rel, pad=0):
-    """frames = 11 caixas (x, y, w, h) na ordem do jogo. A caixa pode ter folga: o desenho e recortado."""
+def build_character(src_name, frames, keyer, cell_h, out_rel, pad=0, solo=()):
+    """frames = 11 caixas (x, y, w, h) na ordem do jogo. A caixa pode ter folga: o desenho e recortado.
+    solo: quadros em que so o desenho principal fica (tira sombra do pulo, poeira e a caveira do 'morrendo')."""
     a = keyer(load(src_name))
     extracted = []
     for i, box in enumerate(frames):
         x, y, w, h = box
         fr = crop(a, (x, y - pad, w, h + pad))
-        fr = keep_big_components(fr, 0.01)
+        fr = keep_big_components(fr, 0.2 if i in solo else 0.01)
         fr = drop_edge_fragments(fr)
         fr = trim(fr)
         pole_x = None
@@ -235,19 +236,35 @@ DAVID_SMALL = [(42, 239, 134, 258), (222, 239, 132, 258), (393, 239, 132, 258), 
 DAVID_BIG = [(42, 258, 130, 293), (207, 259, 142, 292), (380, 260, 135, 291), (552, 259, 135, 292),
              (702, 320, 226, 231), (975, 215, 170, 276), (1144, 316, 168, 234), (1304, 416, 244, 135),
              (1535, 181, 140, 369), (1698, 174, 140, 376), (1862, 258, 265, 293)]
-# Firewall: veio em 2 linhas com 15 poses; estas sao as 11 na ordem do jogo.
-DAVID_FIRE = [(22, 21, 108, 270), (172, 20, 109, 271), (313, 21, 124, 270), (469, 20, 128, 271),   # parado, andar 1-3
-              (778, 98, 260, 193), (1083, 14, 170, 275),                                          # derrapar, pular
-              (482, 346, 121, 244), (706, 374, 278, 208),                                         # agachar, morrer
-              (1034, 305, 121, 286), (1266, 305, 138, 286), (1487, 326, 273, 264)]               # mastro 1-2, arremessar
-
 build_character("dev02_small_v1_original.png", DAVID_SMALL, lambda a: a, 16, "Characters/dev02/small.png")
 build_character("dev02_big_original.png", DAVID_BIG, key_green, 32, "Characters/dev02/big.png")
-build_character("dev02_fire_v2_original.jpg", DAVID_FIRE, key_green, 32, "Characters/dev02/fire.png")
+
+def strip_boxes(bounds, scale, y0, y1):
+    """Caixas a partir das divisas entre os quadros, medidas na imagem reduzida (scale = original / medida)."""
+    b = [int(round(v * scale)) for v in bounds]
+    return [(b[i], int(y0 * scale), b[i + 1] - b[i], int((y1 - y0) * scale)) for i in range(len(b) - 1)]
+
+# Firewall v2 (gema rosa): 11 poses numa linha, sem rotulos.
+DAVID_FIRE = strip_boxes([20, 175, 335, 497, 645, 890, 1072, 1222, 1438, 1575, 1730, 2000], 2138 / 2000, 150, 530)
+build_character("dev02_fire_v2_original.png", DAVID_FIRE, key_green, 32, "Characters/dev02/fire.png", solo=(4, 5, 7))
 
 p = load("dev02_portrait_original.png")
 p = p[20:20 + 880, 190:190 + 880]
 save(quantize(downscale(p, 48, 48), 48), "Characters/dev02/portrait.png")
+
+# =====================================================================
+# VICTOR (dev03)
+# =====================================================================
+# As tres folhas tem 11 poses numa linha com os rotulos embaixo (y > ~505 na medida reduzida).
+VICTOR_SMALL = strip_boxes([0, 170, 340, 510, 685, 890, 1065, 1228, 1425, 1585, 1775, 2000], 2159 / 2000, 140, 500)
+VICTOR_BIG = strip_boxes([10, 170, 333, 505, 668, 880, 1048, 1205, 1425, 1590, 1745, 2000], 2172 / 2000, 125, 495)
+build_character("dev03_small_v1_original.png", VICTOR_SMALL, lambda a: a, 16, "Characters/dev03/small.png", solo=(4, 5, 7))
+build_character("dev03_big_original.png", VICTOR_BIG, key_green, 32, "Characters/dev03/big.png", solo=(4, 5, 7))
+build_character("dev03_fire_v2_original.png", VICTOR_BIG, key_green, 32, "Characters/dev03/fire.png", solo=(4, 5, 7))
+
+p = load("dev03_portrait_original.png")
+p = p[30:30 + 960, 150:150 + 960]
+save(quantize(downscale(p, 48, 48), 48), "Characters/dev03/portrait.png")
 
 # =====================================================================
 # MASTRO / BANDEIRA / PACOTE (extraidos da folha do Senior)
@@ -406,6 +423,11 @@ strip(it, [(818, 425, 145, 195), (994, 425, 145, 195), (1170, 425, 145, 195), (1
 strip(it, [(100, 765, 195, 205), (300, 765, 195, 205), (498, 765, 180, 205), (682, 765, 180, 205)], 16, 16,
       "Items/sudo_star.png", scale='shared')
 strip(it, [(1100, 800, 155, 155)], 16, 16, "Items/backup.png")
+
+# Power-ups por personagem: gema rosa (David) e Monster White (Victor). Os brilhos soltos da gema saem.
+gm = key_green(load("Gema Rosa e Lata Monster Gelada.png"))
+strip(gm, [(150, 220, 660, 520)], 16, 16, "Items/gem.png", largest_only=True)
+strip(gm, [(1110, 110, 425, 665)], 16, 16, "Items/monster.png", largest_only=True)
 
 # ---------------- Efeitos e interface ----------------
 fx = key_green(load("effects_ui_original.png"))

@@ -244,6 +244,21 @@ def sfx_game_over():
     return lead * 0.6 + bass[:len(lead)] * 0.5
 
 
+def sfx_mug_fall():
+    # aviso da caneca de cafe caindo (so com o David): assobio descendo
+    n = samples(0.55)
+    return square(slide(1400, 500, n, 0.8), n, 0.25) * env(n, release=0.08) * 0.6
+
+
+def sfx_mug_break():
+    # caneca quebrando: tilintar de louca + respingo
+    n = samples(0.35)
+    clink = seq(tone(2637, 0.04, "square", 0.25, decay=0.03), tone(3136, 0.05, "square", 0.25, decay=0.04))
+    clink = np.pad(clink, (0, max(0, n - len(clink))))[:n]
+    splash = noise(n, 7000) * fade(n, 2.5)
+    return clink * 0.7 + splash * 0.6
+
+
 SFX = {name[4:]: fn for name, fn in globals().items() if name.startswith("sfx_")}
 
 # =====================================================================

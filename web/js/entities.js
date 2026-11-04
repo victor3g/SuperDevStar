@@ -826,13 +826,26 @@ export class Item extends Entity {
   drawSprite(ctx, sheet, frame) { sheet.draw(ctx, frame, this.centerX - 8, this.bottom - 16); }
 }
 
-/** CAFE - equivalente ao cogumelo. Junior vira Senior. */
+/** Itens que fazem o Junior virar Senior. Cada personagem tem o seu (characters.json, campo "powerups"). */
+export const GROWTH_ITEMS = {
+  coffee: { file: 'Items/coffee.png', color: [140, 80, 40, 255], name: 'CAFE' },
+  monster: { file: 'Items/monster.png', color: [225, 225, 235, 255], name: 'MONSTER' },
+  gem: { file: 'Items/gem.png', color: [255, 80, 200, 255], name: 'GEMA ROSA' },
+};
+
+/** CAFE / MONSTER / GEMA ROSA - equivalente ao cogumelo. Junior vira Senior. */
 export class Coffee extends Item {
-  constructor(x, y) { super(x, y); this.sheet = Sprites.get('Items/coffee.png', 16, 16, [140, 80, 40, 255]); }
+  constructor(x, y, kind = 'coffee') {
+    super(x, y);
+    this.kind = GROWTH_ITEMS[kind] ? kind : 'coffee';
+    const d = GROWTH_ITEMS[this.kind];
+    this.sheet = Sprites.get(d.file, 16, 16, d.color);
+  }
   onEmerged() { this.vx = 1; }
   updateItem() { this.moveLikeMushroom(); }
   collect(p) {
     this.stage.scene.addScore(1000, this.centerX, this.top);
+    this.stage.scene.growthItemName = GROWTH_ITEMS[this.kind].name;
     if (!p.isBig) p.powerUp(PowerState.Big);
     else Audio.play('powerup');
   }
@@ -846,6 +859,7 @@ export class Firewall extends Item {
   hop() {}
   collect(p) {
     this.stage.scene.addScore(1000, this.centerX, this.top);
+    this.stage.scene.growthItemName = 'FIREWALL';
     if (p.power === PowerState.Small) p.powerUp(PowerState.Big);
     else if (p.power === PowerState.Big) p.powerUp(PowerState.Fire);
     else Audio.play('powerup');
@@ -1029,7 +1043,7 @@ export class PacketProjectile extends Entity {
     if (this.onGround) this.vy = -3.5;
     if (!this.isOnScreen(8) || this.top > this.map.heightPx) { this.removed = true; return; }
     for (const e of this.stage.entities) {
-      if (e instanceof Enemy && e.isActive && this.intersects(e)) {
+      if (((e instanceof Enemy && e.isActive) || (e.shootable && !e.removed)) && this.intersects(e)) {
         e.onFireball(Math.sign(vx));
         this.explode();
         return;
@@ -1042,6 +1056,83 @@ export class PacketProjectile extends Entity {
     this.stage.spawn(new Explosion(this.centerX, this.centerY));
   }
   draw(ctx) { this.sheet.draw(ctx, Math.floor(this.anim / 3) % 4, this.x, this.y, { flipX: this.vx < 0 }); }
+}
+
+// =====================================================================
+// Caneca de cafe caindo do ceu (so quando o personagem nao pode tomar cafe: o David).
+// Treme no alto por um instante (aviso), cai e quebra no chao. Encostar machuca; o Firewall a destroi.
+// =====================================================================
+const MUG_WARN_FRAMES = 45, MUG_GRAVITY = 0.12, MUG_MAX_FALL = 3;
+
+export class FallingMug extends Entity {
+  constructor(centerX, y) {
+    super();
+    this.w = 10; this.h = 12;
+    this.x = centerX - this.w / 2;
+    this.y = y;
+    this.warn = MUG_WARN_FRAMES;
+    this.anim = 0;
+    this.layer = Layer.Front;
+    this.sheet = Sprites.get('Items/coffee.png', 16, 16, [140, 80, 40, 255]);
+    Audio.play('mug_fall');
+  }
+  get interactsWithPlayer() { return !this.removed; }
+  get shootable() { return true; }
+  update() {
+    this.anim++;
+    if (this.warn > 0) { this.warn--; return; }
+    this.applyGravity(MUG_GRAVITY, MUG_MAX_FALL);
+    this.moveY(this.vy);
+    if (this.onGround) { this.shatter(); return; }
+    if (this.top > this.map.heightPx) this.removed = true;
+  }
+  onTouchPlayer(p) {
+    if (p.invincible) { this.shatter(); this.stage.scene.addScore(200, this.centerX, this.top); return; }
+    if (!p.canBeHurt) return;            // piscando depois de um dano: passa por dentro
+    p.hurt();
+    this.shatter();
+  }
+  onFireball() {
+    this.stage.scene.addScore(100, this.centerX, this.top);
+    this.shatter();
+  }
+  shatter() {
+    if (this.removed) return;
+    this.removed = true;
+    Audio.play('mug_break');
+    for (let i = 0; i < 8; i++) {
+      const a = Math.PI * (1 + i / 7);   // leque para cima
+      this.stage.spawn(new CoffeeDrop(this.centerX, this.bottom - 4, Math.cos(a) * 1.4, Math.sin(a) * 2.4 - 0.5, i % 3 === 0));
+    }
+  }
+  draw(ctx) {
+    // aviso: treme e mostra "!" piscando em cima
+    const shake = this.warn > 0 ? (Math.floor(this.anim / 2) % 2 ? 1 : -1) : 0;
+    const flip = this.warn === 0 && Math.floor(this.anim / 8) % 2 === 1;
+    this.sheet.draw(ctx, 0, Math.round(this.centerX - 8 + shake), Math.round(this.bottom - 14), { flipX: flip });
+    if (this.warn > 0 && Math.floor(this.anim / 6) % 2 === 0) {
+      PixelFont.drawCentered(ctx, '!', Math.round(this.centerX), Math.round(this.top) - 10, [255, 70, 70, 255], 1, true);
+    }
+  }
+}
+
+/** Respingo de cafe (ou caco da caneca) quando ela quebra. */
+class CoffeeDrop extends Entity {
+  constructor(x, y, vx, vy, shard) {
+    super();
+    this.x = x; this.y = y; this.vx = vx; this.vy = vy;
+    this.w = this.h = 2;
+    this.life = 40;
+    this.color = shard ? [240, 240, 240, 255] : [110, 60, 30, 255];
+    this.layer = Layer.Front;
+  }
+  update() {
+    this.vy += 0.2;
+    this.x += this.vx;
+    this.y += this.vy;
+    if (--this.life <= 0) this.removed = true;
+  }
+  draw(ctx) { Gfx.rect(ctx, Math.round(this.x), Math.round(this.y), 2, 2, this.color); }
 }
 
 // =====================================================================

@@ -10,6 +10,8 @@
 //   quotes      frases tipicas (uma ou mais)
 //   stats       ate 4 atributos de 1 a 5 (rotulo com ate 10 letras)
 //   color       cor tematica (usada enquanto nao ha sprite)
+//   powerups    item que faz virar Senior: "coffee", "monster" e/ou "gem" (com mais de um, sorteia a cada bloco)
+//   coffeeHurts true = canecas de cafe caem do ceu e machucam (quem nao pode tomar cafe)
 {
   "selectSlots": 4,
   "characters": [
@@ -49,6 +51,26 @@
       ],
       "folder": "Characters/dev02",
       "color": "#3B82F6",
+      "enabled": true
+    },
+    {
+      "id": "dev03",
+      "name": "VICTOR",
+      "role": "Desenvolvedor / Dados",
+      "stack": "Python/React/PowerBI",
+      "description": "Dados e full-stack. Toca piano via MIDI em Python e cria seus próprios mundos 2D.",
+      "superpower": "Sobe pipeline ou automação do zero antes do café terminar.",
+      "weakness": "Loop infinito de refatoração e de mecânicas novas.",
+      "quotes": ["Vou automatizar isso aqui rapidinho."],
+      "stats": [
+        { "label": "AUTOMAÇÃO", "value": 5 },
+        { "label": "PIPELINE", "value": 5 },
+        { "label": "CÓDIGO", "value": 4 },
+        { "label": "FOCO", "value": 4 }
+      ],
+      "powerups": ["monster", "coffee"],
+      "folder": "Characters/dev03",
+      "color": "#10B981",
       "enabled": true
     }
   ]

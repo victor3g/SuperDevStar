@@ -1,11 +1,11 @@
 # Situação das imagens
 
-Atualizado em 30/10/2026.
+Atualizado em 04/11/2026.
 
 **Todas as imagens do jogo estão prontas** (54 PNGs em `Assets/`), incluindo as opcionais:
 fundos das telas de título e seleção, sala bônus subterrânea completa e versão Firewall da personagem.
 
-Os sons também estão prontos: são gerados por `tools/generate_audio.py` (21 efeitos e 7 músicas originais).
+Os sons também estão prontos: são gerados por `tools/generate_audio.py` (23 efeitos e 7 músicas originais).
 
 ---
 
@@ -27,6 +27,9 @@ Todos os originais ficam em `Imagens Geradas/`, e `tools/convert_generated_art.p
 | `items_original.png` | `Items/coin, coin_spin, coffee, firewall, sudo_star, backup` |
 | `effects_ui_original.png` | `Effects/*`, `UI/hud_coin.png`, `UI/logo.png` |
 | `decor_*_original.png`, `background_overworld_far_original.png` | morros, arbustos, Data Center, placa, skyline |
+| `dev02_small_v1`, `dev02_big`, `dev02_fire_v2` (gema), `dev02_portrait` | `Characters/dev02/*` (David) |
+| `dev03_small_v1`, `dev03_big`, `dev03_fire_v2`, `dev03_portrait` | `Characters/dev03/*` (Victor) |
+| `Gema Rosa e Lata Monster Gelada.png` | `Items/gem.png` (David) e `Items/monster.png` (Mariana e Victor) |
 | `decor_clouds_original.png`, `dev01_small_v1_original.png` | **sem uso** (substituídos pelas versões novas) |
 
 ## Ajustes no código para casar com a arte
