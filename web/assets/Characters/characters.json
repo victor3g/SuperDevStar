@@ -1,0 +1,18 @@
+// Personagens jogaveis. Todos tem a mesma jogabilidade; muda o visual e os textos.
+// Para adicionar um amigo: copie o bloco, mude id/name/folder e crie a pasta com os sprites.
+// selectSlots = quantas cartas aparecem na tela de selecao (vagas extras mostram "EM BREVE").
+{
+  "selectSlots": 4,
+  "characters": [
+    {
+      "id": "dev01",
+      "name": "MARIANA",
+      "role": "Full Stack Developer",
+      "stack": "C# / .NET",
+      "description": "Nunca faz deploy na sexta. Bom, quase nunca.",
+      "folder": "Characters/dev01",
+      "color": "#E04848",
+      "enabled": true
+    }
+  ]
+}

@@ -40,6 +40,9 @@ namespace SuperDevStar.Entities
         public const int FrameClimb2 = 9;
         public const int FrameThrow = 10;
 
+        /// <summary>Ciclo de caminhada: passo, parado, passo, parado... (o quadro parado entre os passos da a sensacao de pisada).</summary>
+        public static readonly int[] WalkCycle = { FrameWalk1, FrameIdle, FrameWalk1 + 1, FrameIdle, FrameWalk1 + 2, FrameIdle };
+
         // ---------------- Hitbox ----------------
         public const float PlayerWidth = 12f;
         public const float SmallHeight = 15f;
@@ -74,6 +77,8 @@ namespace SuperDevStar.Entities
         int _frame;
         int _modeTimer;
         float _animDistance;
+        int _walkStep;
+        bool _wasWalking;
         bool _skidding;
         bool _deathByPit;
         PowerState _fromPower;
@@ -311,6 +316,9 @@ namespace SuperDevStar.Entities
 
         void Animate()
         {
+            bool walking = OnGround && !Crouching && !_skidding && Math.Abs(Velocity.X) > 0.01f;
+            if (!walking) _wasWalking = false;
+
             if (Crouching)
             {
                 _frame = FrameCrouch;
@@ -323,28 +331,35 @@ namespace SuperDevStar.Entities
             {
                 _frame = FrameSkid;
             }
-            else if (Math.Abs(Velocity.X) > 0.01f)
+            else if (walking)
             {
                 AnimateWalk(Velocity.X);
             }
             else
             {
                 _frame = FrameIdle;
-                _animDistance = 0f;
             }
 
             if (_throwTimer > 0 && !Crouching) _frame = FrameThrow;
         }
 
+        /// <summary>Avanca o ciclo de caminhada conforme a distancia percorrida (mais rapido = passos mais rapidos).</summary>
         void AnimateWalk(float vx)
         {
-            if (_frame < FrameWalk1 || _frame > FrameWalk1 + 2) _frame = FrameWalk1;
-            _animDistance += Math.Max(Math.Abs(vx), 0.6f);
-            if (_animDistance >= 7f)
+            if (!_wasWalking)
             {
-                _animDistance -= 7f;
-                _frame = FrameWalk1 + ((_frame - FrameWalk1 + 1) % 3);
+                // comeca sempre com um passo, para a reacao ao botao ser imediata
+                _wasWalking = true;
+                _walkStep = 0;
+                _animDistance = 0f;
             }
+            _animDistance += Math.Max(Math.Abs(vx), 0.6f);
+            if (_animDistance >= 6f)
+            {
+                _animDistance -= 6f;
+                _walkStep = (_walkStep + 1) % WalkCycle.Length;
+            }
+            _frame = WalkCycle[_walkStep];
         }
 
         // =====================================================================

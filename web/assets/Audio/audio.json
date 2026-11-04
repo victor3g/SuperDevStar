@@ -1,0 +1,5 @@
+{
+  "_comment": "Liste aqui os sons que existem (caminho relativo a assets/Audio/). O navegador aceita .mp3, .ogg e .wav. Nomes esperados em docs/ASSETS.md, secao 7.",
+  "sfx": {},
+  "music": {}
+}

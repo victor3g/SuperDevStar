@@ -159,7 +159,7 @@ namespace SuperDevStar.Scenes
             }
 
             // Preview animado andando (versao grande).
-            int walkFrame = Player.FrameWalk1 + (_frame / 6) % 3;
+            int walkFrame = Player.WalkCycle[(_frame / 7) % Player.WalkCycle.Length];
             // Celulas de 32 px tem o corpo no meio: puxa para a esquerda para nao sobrar espaco.
             var previewPos = new Vector2(panel.X + 12 - (c.Big.FrameWidth - 16), panel.Y + 12);
             c.Big.Draw(sb, walkFrame, previewPos, scale: 2f, placeholderHeight: 0);

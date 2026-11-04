@@ -6,7 +6,7 @@
   "characters": [
     {
       "id": "dev01",
-      "name": "DEV 01",
+      "name": "MARIANA",
       "role": "Full Stack Developer",
       "stack": "C# / .NET",
       "description": "Nunca faz deploy na sexta. Bom, quase nunca.",

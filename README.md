@@ -1,66 +1,184 @@
+<div align="center">
+
+<img src="docs/images/screen-title.png" alt="Super Dev Star - tela de título" width="512">
+
 # Super Dev Star
 
-Plataforma 2D no estilo Super Mario Bros (NES), em **C# + MonoGame**, com os personagens sendo
-devs amigos e todo o universo girando em torno de tecnologia.
+**Um plataforma no estilo Super Mario Bros onde os heróis são devs e os inimigos são bugs.**
 
-* Física copiada dos valores do SMB1: aceleração, corrida segurando B, derrapagem, pulo com altura
-  variável que depende da velocidade, quique ao pisar, etc.
-* Júnior → Sênior (Café) → Firewall (atira pacotes), Sudo Star (invencível), Backup (1UP)
-* Bugs (goomba) e Vírus (koopa com cápsula chutável e combo de pontos)
-* Blocos ?, tijolos quebráveis, bloco de várias moedas, bloco invisível
-* Canos com sala bônus subterrânea, checkpoint, tempo, "hurry up", mastro com pontuação por altura,
-  contagem do tempo restante e fogos de artifício
-* Tela de título, **seleção de personagem**, intro da fase, pausa, game over, final e recorde salvo
+Corra pela cidade da tecnologia, tome café para virar Sênior, ative o Firewall,
+esmague bugs, chute vírus e faça o deploy no Data Center antes do tempo acabar.
 
-## Como rodar
+🎮 **Jogue no navegador, no computador ou no celular. Sem instalar nada.**
 
-1. Instale o **.NET 8 SDK**: https://dotnet.microsoft.com/download (ou `winget install Microsoft.DotNet.SDK.8`)
-2. Na pasta do projeto:
+</div>
+
+---
+
+<div align="center">
+<img src="docs/images/gameplay.gif" alt="Gameplay do Super Dev Star" width="512">
+</div>
+
+## Sobre o jogo
+
+Super Dev Star recria a jogabilidade do Super Mario Bros do NES, com os **mesmos valores de física**:
+aceleração, corrida, derrapagem, pulo mais alto quanto mais rápido você corre, quique ao pisar nos
+inimigos e combos de pontos. Tudo foi transportado para o mundo da tecnologia:
+
+| No Mario | No Super Dev Star |
+|---|---|
+| Mario pequeno / grande | **Dev Júnior** / **Dev Sênior** |
+| Cogumelo | **Café** |
+| Flor de fogo | **Firewall**: atira pacotes de dados |
+| Estrela | **Sudo Star**: invencibilidade de administrador |
+| Cogumelo 1UP | **Backup** (disquete) |
+| Goomba | **Bug** |
+| Koopa e casco | **Vírus** e sua **cápsula** chutável |
+| Bloco `?` | **Commit block** |
+| Castelo | **Data Center** |
+
+<table>
+  <tr>
+    <td><img src="docs/images/screen-blocks.png" alt="Blocos e moedas"></td>
+    <td><img src="docs/images/screen-firewall.png" alt="Atirando pacotes com o Firewall"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Commit blocks, moedas e bugs pelo caminho</sub></td>
+    <td align="center"><sub>Com o Firewall, ela atira pacotes de dados</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/images/screen-bonus.png" alt="Sala bônus de servidores"></td>
+    <td><img src="docs/images/screen-datacenter.png" alt="Chegada ao Data Center"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Sala bônus secreta: entre pelo duto e encontre a sala de servidores</sub></td>
+    <td align="center"><sub>Desça a antena de deploy e entre no Data Center</sub></td>
+  </tr>
+</table>
+
+## Personagens
+
+Cada personagem é um dev de verdade, um amigo nosso. Todos jogam igual; muda o visual e a história.
+
+<div align="center">
+<img src="docs/images/character-mariana.png" alt="Mariana: retrato, Júnior, Sênior e Firewall" width="720">
+
+**MARIANA**, Full Stack Developer · C# / .NET
+<br><sub><i>"Nunca faz deploy na sexta. Bom, quase nunca."</i></sub>
+</div>
+
+<br>
+
+<div align="center">
+<img src="docs/images/screen-select.png" alt="Seleção de personagem" width="512">
+<br><sub>Mais devs chegando em breve: a tela de seleção já tem vaga para eles.</sub>
+</div>
+
+## Funcionalidades
+
+- 🕹️ **Física fiel ao Super Mario Bros** (valores originais do NES, rodando a 60 passos por segundo)
+- ☕ **3 formas**: Júnior → Sênior (Café) → Firewall (atira); Sudo Star para invencibilidade
+- 🐞 **Inimigos**: Bug (esmagável) e Vírus (vira cápsula chutável, com combo de pontos)
+- 🧱 Blocos `?`, tijolos quebráveis, bloco de várias moedas e bloco invisível de vida extra
+- 🚇 **Canos** com sala bônus subterrânea, checkpoint no meio da fase e "hurry up" quando o tempo aperta
+- 🚩 **Fim de fase clássico**: pontos pela altura no mastro, contagem do tempo e fogos de artifício
+- 📱 **Celular**: botões na tela com vários dedos ao mesmo tempo, deslizar entre direções e vibração.
+  Pode ser instalado na tela inicial como app.
+- 🎮 Teclado e **controle de videogame** (Xbox / PlayStation)
+- 🏆 Recorde salvo no navegador
+
+## Como jogar
+
+| Ação | Teclado | Celular | Controle |
+|---|---|---|---|
+| Mover | Setas / A D | ◀ ▶ | D-pad / analógico |
+| Pular | Z / Espaço | **A** | A |
+| Correr / atirar | X / Shift | **B** | X |
+| Agachar / entrar no cano | Seta para baixo | ▼ | Baixo |
+| Pausa / confirmar | Enter | START | Start |
+| Voltar ao menu | Esc | ESC | B |
+| Tela cheia | F | ⛶ | |
+| Som liga/desliga | M | 🔊 | |
+
+> **Dicas:** segure **correr** para pular mais longe. Pise na cápsula do vírus para chutá-la contra
+> os outros inimigos. Procure o cano que leva à sala bônus.
+
+## Publicar online (GitHub Pages)
+
+O repositório já vem com a publicação automática configurada. Depois de enviar para o GitHub, o jogo fica em:
+
+```
+https://SEU-USUARIO.github.io/super-dev-star/
+```
+
+Resumo (o passo a passo completo está em **[docs/DEPLOY_GITHUB.md](docs/DEPLOY_GITHUB.md)**):
+
+```bash
+gh auth login
+```
+```bash
+git init -b main
+```
+```bash
+git add .
+```
+```bash
+git commit -m "Super Dev Star: primeira versao"
+```
+```bash
+gh repo create super-dev-star --public --source=. --push
+```
+```bash
+gh api -X POST repos/{owner}/super-dev-star/pages -f build_type=workflow
+```
+```bash
+gh workflow run deploy-pages.yml
+```
+
+Depois disso, cada `git push` publica a versão nova sozinho. Para um link privado entre amigos,
+há também o caminho pelo itch.io em [docs/PUBLICAR_WEB.md](docs/PUBLICAR_WEB.md).
+
+## Rodar no seu computador
+
+**Versão web** (recomendada, só precisa de Python):
+
+```bash
+python -m http.server 8080 --directory web
+```
+
+Depois abra http://localhost:8080.
+
+**Versão desktop em C# / MonoGame** (precisa do .NET 8 SDK):
 
 ```bash
 dotnet run
 ```
 
-Na primeira vez ele baixa o pacote MonoGame pelo NuGet. Não precisa instalar o MGCB/Content Pipeline:
-as imagens são PNGs lidos direto da pasta `Assets/`.
-
-Para gerar um executável para distribuir aos amigos:
-
-```bash
-dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false
-```
-
-## Controles
-
-| Ação | Teclado | Controle |
-|---|---|---|
-| Mover | Setas / A D | D-pad / analógico |
-| Pular (A) | Z / Espaço / K | A |
-| Correr / atirar (B) | X / Shift / J | X ou Y |
-| Agachar / entrar no cano | Seta para baixo | Baixo |
-| Pausa | Enter / P | Start |
-| Tela cheia | F11 | |
-| Ver hitboxes | F1 | |
-
-## Estrutura
+## Estrutura do projeto
 
 ```
 SuperDevStar/
-├─ Program.cs, SuperDevStarGame.cs   loop principal, render 256x240 escalado
-├─ Core/          input, carregamento de assets, fonte pixel, áudio, câmera, sessão, sprites
-├─ Characters/    definição de personagens (lida de characters.json)
-├─ World/         tiles, mapa, leitor de fases, decoração, Stage (área em execução)
-├─ Entities/      Player, inimigos, itens, efeitos, mastro
-├─ Scenes/        título, seleção, intro, gameplay, HUD, game over, final
-├─ Assets/        PNG, WAV, fases e personagens (copiados para o build)
-└─ docs/          ASSETS.md (lista de imagens + guia de arte), LEVEL_FORMAT.md
+├─ web/                 versão web (HTML + JavaScript), a que vai para o GitHub Pages
+│  ├─ index.html        página, botões de toque e manifesto de app
+│  └─ js/               core, world, entities, scenes, main
+├─ Core/ World/ Entities/ Scenes/ Characters/   versão desktop em C# (MonoGame)
+├─ Assets/              imagens, fases e personagens (usados pelas duas versões)
+├─ Imagens Geradas/     artes originais geradas por IA
+├─ tools/               conversão das artes e build da versão web
+├─ docs/                guias (arte, fases, publicação) e imagens deste README
+└─ .github/workflows/   publicação automática no GitHub Pages
 ```
 
-## Adicionando conteúdo
+## Criando conteúdo
 
-* **Novo personagem**: pasta `Assets/Characters/<id>/` com os sprites + um bloco no
-  `Assets/Characters/characters.json`. Veja `docs/ASSETS.md`, seção 3.
-* **Nova fase**: crie `Assets/Levels/1-2.txt` e adicione `1-2` em `levels.txt`. Veja `docs/LEVEL_FORMAT.md`.
-* **O que falta desenhar**: veja `docs/IMAGENS_FALTANDO.md`, ou rode o jogo e abra `bin/Debug/net8.0/missing_assets.txt`.
-* **Arte gerada por IA**: as imagens originais ficam em `Imagens Geradas/`.
-  O `tools/convert_generated_art.py` (Python + Pillow + SciPy) recorta, remove o fundo e reduz para o tamanho do jogo.
+| Quero… | Como |
+|---|---|
+| Adicionar um amigo como personagem | 4 imagens em `Assets/Characters/<id>/` + um bloco em `characters.json`. Veja [docs/ASSETS.md](docs/ASSETS.md) |
+| Criar uma fase nova | Um arquivo de texto em `Assets/Levels/`, onde cada letra é um bloco. Veja [docs/LEVEL_FORMAT.md](docs/LEVEL_FORMAT.md) |
+| Adicionar sons e músicas | Arquivos em `web/assets/Audio/` listados no `audio.json`. Veja [docs/PUBLICAR_WEB.md](docs/PUBLICAR_WEB.md) |
+| Converter artes geradas por IA | Coloque em `Imagens Geradas/` e use `tools/convert_generated_art.py` |
+
+---
+
+<div align="center"><sub>Feito com ☕ e muitos commits. Nenhum deploy foi feito numa sexta-feira durante o desenvolvimento.*</sub>
+<br><sub>* quase nenhum.</sub></div>
