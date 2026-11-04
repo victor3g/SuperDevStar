@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>Super Dev Star</title>
   <meta name="description" content="Plataforma estilo Super Mario no mundo da tecnologia. Jogue no navegador ou no celular.">
   <meta name="theme-color" content="#05081a">
@@ -12,73 +12,70 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Dev Star">
+  <meta name="format-detection" content="telephone=no">
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="icon" href="icon-192.png">
   <style>
-    :root { --bg: #05081a; --btn: rgba(255, 255, 255, 0.14); --btn-down: rgba(120, 220, 255, 0.45); }
+    :root { --bg: #05081a; }
     * { box-sizing: border-box; }
-    html, body { margin: 0; height: 100%; background: var(--bg); overflow: hidden; touch-action: none;
-      -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; }
-    body { display: flex; flex-direction: column; font-family: system-ui, sans-serif; color: #cfe3ff; }
-    #stage { flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; }
-    #screen { image-rendering: pixelated; image-rendering: crisp-edges; background: #000;
+    html, body { margin: 0; height: 100%; width: 100%; background: var(--bg); overflow: hidden;
+      overscroll-behavior: none; touch-action: none; -webkit-text-size-adjust: 100%;
+      -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+    body { position: fixed; inset: 0; font-family: system-ui, sans-serif; color: #cfe3ff; }
+    #stage { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+    #screen { image-rendering: pixelated; image-rendering: crisp-edges; background: #000; touch-action: none;
       box-shadow: 0 0 40px rgba(60, 120, 255, 0.25); }
-    #toolbar { position: fixed; top: 8px; right: 8px; display: flex; gap: 6px; opacity: 0.55; }
+    #toolbar { position: fixed; top: 8px; right: 8px; display: flex; gap: 6px; opacity: 0.55; z-index: 10; }
     #toolbar:hover { opacity: 1; }
-    #toolbar button { background: var(--btn); color: #fff; border: 1px solid rgba(255, 255, 255, 0.25);
+    #toolbar button { background: rgba(255, 255, 255, 0.14); color: #fff; border: 1px solid rgba(255, 255, 255, 0.25);
       border-radius: 6px; padding: 4px 8px; font-size: 13px; cursor: pointer; }
 
-    /* Controles de toque (so aparecem em celular/tablet) */
-    #touch { display: none; height: 170px; padding: 10px 10px 24px; justify-content: space-between; align-items: center; gap: 6px; }
-    body.touch #touch { display: flex; }
-    .pad { display: grid; grid-template-columns: repeat(3, 46px); grid-template-rows: repeat(2, 46px); gap: 4px; flex: none; }
-    .ab { display: flex; gap: 8px; align-items: center; flex: none; }
-    .tbtn { background: var(--btn); border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 12px; color: #fff;
-      font-weight: 700; font-size: 16px; display: flex; align-items: center; justify-content: center; touch-action: none; }
-    .pad .tbtn { width: 46px; height: 46px; }
-    .tbtn.down { background: var(--btn-down); }
-    .round { width: 58px; height: 58px; border-radius: 50%; font-size: 20px; }
-    .ab .round:last-child { margin-bottom: 28px; }
-    .small { padding: 6px 8px; font-size: 11px; border-radius: 10px; }
-    .mid { display: flex; flex-direction: column; gap: 8px; flex: none; }
-    #rotate-hint { display: none; text-align: center; font-size: 12px; opacity: 0.6; padding: 4px; }
-    @media (orientation: portrait) { body.touch #rotate-hint { display: block; } }
-    /* Celular deitado: os botoes flutuam por cima das laterais do jogo */
-    @media (orientation: landscape) {
-      body.touch #touch { position: fixed; left: 0; right: 0; bottom: 0; height: auto; padding: 0 12px 12px;
-        align-items: flex-end; pointer-events: none; }
-      body.touch #touch > * { pointer-events: auto; }
-      body.touch .tbtn { background: rgba(255, 255, 255, 0.1); }
+    /* ---------- Celular: sem botoes, o toque na tela inteira e o controle ---------- */
+    #touch-layer { display: none; position: fixed; inset: 0; z-index: 5; touch-action: none; }
+    body.touch #touch-layer { display: block; }
+    body.touch #toolbar { display: none; }
+    body.touch #stage { align-items: center; }
+    /* "Analogico" que aparece onde o polegar encosta (metade esquerda) */
+    .stick-base, .stick-knob, .tap-ring { position: absolute; border-radius: 50%; pointer-events: none;
+      transform: translate(-50%, -50%); display: none; }
+    .stick-base { width: 120px; height: 120px; border: 2px solid rgba(255, 255, 255, 0.28); background: rgba(255, 255, 255, 0.06); }
+    .stick-knob { width: 54px; height: 54px; background: rgba(120, 220, 255, 0.35); border: 2px solid rgba(255, 255, 255, 0.5); }
+    .tap-ring { width: 70px; height: 70px; border: 3px solid rgba(255, 220, 90, 0.55); }
+    .show { display: block; }
+    /* Dica de controles (aparece nas primeiras partidas) */
+    #touch-help { position: fixed; left: 0; right: 0; bottom: 0; display: none; justify-content: space-between;
+      padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); pointer-events: none; z-index: 6;
+      font-size: 13px; line-height: 1.35; text-shadow: 0 1px 2px #000; transition: opacity 0.8s; }
+    #touch-help.show { display: flex; }
+    #touch-help.fade { opacity: 0; }
+    #touch-help div { background: rgba(0, 0, 0, 0.55); border-radius: 10px; padding: 8px 12px; max-width: 46%; }
+    #rotate-hint { display: none; position: fixed; left: 0; right: 0; bottom: calc(24px + env(safe-area-inset-bottom));
+      text-align: center; font-size: 13px; opacity: 0.7; pointer-events: none; z-index: 6; }
+    @media (orientation: portrait) {
+      body.touch #rotate-hint { display: block; }
+      body.touch #touch-help { bottom: 56px; }
     }
   </style>
 </head>
 <body>
   <div id="stage"><canvas id="screen" width="256" height="240"></canvas></div>
-  <div id="rotate-hint">↻ Gire o celular para jogar com a tela maior</div>
 
   <div id="toolbar">
     <button id="btn-mute" title="Som (M)">🔊</button>
     <button id="btn-fullscreen" title="Tela cheia (F)">⛶</button>
   </div>
 
-  <div id="touch">
-    <div class="pad">
-      <div></div>
-      <div class="tbtn" data-actions="up">▲</div>
-      <div></div>
-      <div class="tbtn" data-actions="left">◀</div>
-      <div class="tbtn" data-actions="down">▼</div>
-      <div class="tbtn" data-actions="right">▶</div>
-    </div>
-    <div class="mid">
-      <div class="tbtn small" data-actions="back">ESC</div>
-      <div class="tbtn small" data-actions="start confirm">START</div>
-    </div>
-    <div class="ab">
-      <div class="tbtn round" data-actions="run">B</div>
-      <div class="tbtn round" data-actions="jump confirm">A</div>
-    </div>
+  <!-- Camada de toque (so no celular/tablet) -->
+  <div id="touch-layer">
+    <div class="stick-base" id="stick-base"></div>
+    <div class="stick-knob" id="stick-knob"></div>
+    <div class="tap-ring" id="tap-ring"></div>
   </div>
+  <div id="touch-help">
+    <div>◀ ▶ <b>Lado esquerdo:</b> arraste o dedo para andar.<br>Mais longe = correr · para cima = pular · para baixo = agachar/cano</div>
+    <div><b>Lado direito:</b> toque para pular (segure = mais alto).<br>Deslize o dedo para lançar pacote (Firewall).<br>Toque no placar para pausar.</div>
+  </div>
+  <div id="rotate-hint">↻ Gire o celular para jogar com a tela maior</div>
 
   <script type="module" src="js/main.js"></script>
 </body>

@@ -222,7 +222,7 @@ export class Player extends Entity {
 
     const left = Input.isDown('left'), right = Input.isDown('right'), down = Input.isDown('down');
     const jumpHeld = Input.isDown('jump'), jumpPressed = Input.wasPressed('jump');
-    const runHeld = Input.isDown('run'), runPressed = Input.wasPressed('run');
+    const runHeld = Input.isDown('run'), firePressed = Input.wasPressed('fire');
 
     // Agachar (so grande, so no chao)
     if (this.isBig && this.onGround) {
@@ -276,7 +276,7 @@ export class Player extends Entity {
     this.applyGravity(this.jumping && this.vy < 0 ? this.gravHold : this.gravFall, MAX_FALL);
 
     // Atirar pacote (Firewall)
-    if (runPressed && this.power === PowerState.Fire && !this.crouching) this.tryThrow();
+    if (firePressed && this.power === PowerState.Fire && !this.crouching) this.tryThrow();
 
     // Colisao com o mapa
     this.moveX(this.vx);

@@ -5,7 +5,7 @@ Atualizado em 30/10/2026.
 **Todas as imagens do jogo estão prontas** (54 PNGs em `Assets/`), incluindo as opcionais:
 fundos das telas de título e seleção, sala bônus subterrânea completa e versão Firewall da personagem.
 
-O que ainda falta são os **sons** (WAV), listados em `docs/ASSETS.md`, seção 7. Sem eles o jogo roda em silêncio.
+Os sons também estão prontos: são gerados por `tools/generate_audio.py` (21 efeitos e 7 músicas originais).
 
 ---
 

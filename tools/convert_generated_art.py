@@ -225,6 +225,31 @@ p = p[40:40 + 860, 197:197 + 860]
 save(quantize(downscale(p, 48, 48), 48), "Characters/dev01/portrait.png")
 
 # =====================================================================
+# DAVID (dev02)
+# =====================================================================
+# Junior: fundo transparente, 11 poses em uma linha (rotulos embaixo ficam fora das caixas).
+DAVID_SMALL = [(42, 239, 134, 258), (222, 239, 132, 258), (393, 239, 132, 258), (566, 239, 131, 258),
+               (707, 287, 220, 210), (953, 195, 162, 255), (1139, 285, 168, 212), (1304, 370, 206, 127),
+               (1526, 179, 138, 319), (1696, 168, 137, 330), (1866, 251, 144, 248)]
+# Senior: fundo verde, 11 poses (a bola do arremesso e um pedaco separado, entra na ultima caixa).
+DAVID_BIG = [(42, 258, 130, 293), (207, 259, 142, 292), (380, 260, 135, 291), (552, 259, 135, 292),
+             (702, 320, 226, 231), (975, 215, 170, 276), (1144, 316, 168, 234), (1304, 416, 244, 135),
+             (1535, 181, 140, 369), (1698, 174, 140, 376), (1862, 258, 265, 293)]
+# Firewall: veio em 2 linhas com 15 poses; estas sao as 11 na ordem do jogo.
+DAVID_FIRE = [(22, 21, 108, 270), (172, 20, 109, 271), (313, 21, 124, 270), (469, 20, 128, 271),   # parado, andar 1-3
+              (778, 98, 260, 193), (1083, 14, 170, 275),                                          # derrapar, pular
+              (482, 346, 121, 244), (706, 374, 278, 208),                                         # agachar, morrer
+              (1034, 305, 121, 286), (1266, 305, 138, 286), (1487, 326, 273, 264)]               # mastro 1-2, arremessar
+
+build_character("dev02_small_v1_original.png", DAVID_SMALL, lambda a: a, 16, "Characters/dev02/small.png")
+build_character("dev02_big_original.png", DAVID_BIG, key_green, 32, "Characters/dev02/big.png")
+build_character("dev02_fire_v2_original.jpg", DAVID_FIRE, key_green, 32, "Characters/dev02/fire.png")
+
+p = load("dev02_portrait_original.png")
+p = p[20:20 + 880, 190:190 + 880]
+save(quantize(downscale(p, 48, 48), 48), "Characters/dev02/portrait.png")
+
+# =====================================================================
 # MASTRO / BANDEIRA / PACOTE (extraidos da folha do Senior)
 # =====================================================================
 sr = key_green(load("dev01_big_original.png"))

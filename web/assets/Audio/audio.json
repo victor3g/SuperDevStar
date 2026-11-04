@@ -1,5 +1,35 @@
 {
-  "_comment": "Liste aqui os sons que existem (caminho relativo a assets/Audio/). O navegador aceita .mp3, .ogg e .wav. Nomes esperados em docs/ASSETS.md, secao 7.",
-  "sfx": {},
-  "music": {}
+  "_comment": "Gerado por tools/generate_audio.py. Caminhos relativos a assets/Audio/.",
+  "sfx": {
+    "jump_small": "Sfx/jump_small.wav",
+    "jump_big": "Sfx/jump_big.wav",
+    "coin": "Sfx/coin.wav",
+    "bump": "Sfx/bump.wav",
+    "break": "Sfx/break.wav",
+    "powerup_appear": "Sfx/powerup_appear.wav",
+    "powerup": "Sfx/powerup.wav",
+    "pipe": "Sfx/pipe.wav",
+    "1up": "Sfx/1up.wav",
+    "stomp": "Sfx/stomp.wav",
+    "kick": "Sfx/kick.wav",
+    "fireball": "Sfx/fireball.wav",
+    "die": "Sfx/die.wav",
+    "flagpole": "Sfx/flagpole.wav",
+    "pause": "Sfx/pause.wav",
+    "hurry": "Sfx/hurry.wav",
+    "tick": "Sfx/tick.wav",
+    "firework": "Sfx/firework.wav",
+    "menu_move": "Sfx/menu_move.wav",
+    "menu_select": "Sfx/menu_select.wav",
+    "game_over": "Sfx/game_over.wav"
+  },
+  "music": {
+    "overworld": "Music/overworld.mp3",
+    "underground": "Music/underground.mp3",
+    "star": "Music/star.mp3",
+    "title": "Music/title.mp3",
+    "select": "Music/select.mp3",
+    "stage_clear": "Music/stage_clear.mp3",
+    "ending": "Music/ending.mp3"
+  }
 }

@@ -188,7 +188,10 @@ Se pegar algo pronto, **recolora para a paleta do jogo** para não destoar.
 
 ---
 
-## 7. Sons e músicas (WAV)
+## 7. Sons e músicas
+
+Já existem: todos são gerados por `tools/generate_audio.py` (veja `docs/PUBLICAR_WEB.md`, seção "Sons").
+Efeitos em WAV, músicas em MP3, lista em `Assets/Audio/audio.json`.
 
 `Assets/Audio/Sfx/`:
 `jump_small` `jump_big` `coin` `bump` `break` `powerup_appear` `powerup` `pipe` `1up` `stomp`

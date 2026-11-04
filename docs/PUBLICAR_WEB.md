@@ -52,33 +52,49 @@ Para atualizar: gere o zip de novo e, na página do projeto, troque o arquivo em
 
 ## Sons
 
-Os sons são opcionais. Para adicionar:
+Todos os sons (21 efeitos e 7 músicas) são **gerados por código** em `tools/generate_audio.py`.
+É um sintetizador no estilo do chip do NES, e todas as melodias são originais (sem direitos autorais de terceiros).
 
-1. Coloque os arquivos em `web/assets/Audio/` (o navegador aceita **.mp3**, **.ogg** ou **.wav**).
-2. Liste-os em `web/assets/Audio/audio.json`:
+Para mudar um som, edite a função dele no script e gere de novo:
+
+```bash
+pip install numpy soundfile
+```
+```bash
+python tools/generate_audio.py
+```
+```bash
+python tools/build_web.py
+```
+
+O script grava os efeitos em `Assets/Audio/Sfx/*.wav`, as músicas em `Assets/Audio/Music/*.mp3` e a lista em
+`Assets/Audio/audio.json`. O `build_web.py` copia tudo para `web/assets/`.
+
+Para usar um som próprio no lugar de um gerado, coloque o arquivo (.mp3, .ogg ou .wav) em `Assets/Audio/` e
+aponte o nome dele no `audio.json`:
 
 ```json
 {
-  "sfx":   { "jump_small": "Sfx/jump_small.mp3", "coin": "Sfx/coin.mp3" },
-  "music": { "overworld": "Music/overworld.mp3", "title": "Music/title.mp3" }
+  "sfx":   { "coin": "Sfx/minha_moeda.mp3" },
+  "music": { "overworld": "Music/minha_musica.mp3" }
 }
 ```
 
-Os nomes esperados estão em `docs/ASSETS.md`, seção 7. Som que não estiver listado simplesmente não toca.
-O navegador só libera áudio depois do primeiro clique ou tecla; a música começa nesse momento.
+O navegador só libera áudio depois do primeiro clique, toque ou tecla; a música começa nesse momento.
+A tecla **M** liga e desliga o som.
 
 ## Controles na versão web
 
-| Ação | Teclado | Celular |
+| Ação | Teclado | Celular (sem botões) |
 |---|---|---|
-| Mover | Setas / A D | ◀ ▶ |
-| Pular | Z / Espaço | A |
-| Correr / atirar | X / Shift | B |
-| Agachar / entrar no cano | Seta para baixo | ▼ |
-| Pausa / confirmar | Enter | START |
-| Voltar | Esc | ESC |
-| Tela cheia | F | botão ⛶ no canto |
-| Som liga/desliga | M | botão 🔊 no canto |
+| Mover / correr | Setas / A D (+ X para correr) | arrastar no lado esquerdo (mais longe = correr) |
+| Pular | Z / Espaço / ↑ | tocar no lado direito, ou arrastar para cima no esquerdo |
+| Atirar pacote (Firewall) | X / Shift / C | deslizar o dedo no lado direito |
+| Agachar / entrar no cano | Seta para baixo | arrastar para baixo no lado esquerdo |
+| Pausa | Enter | tocar no placar |
+| Menus | setas + Enter / Esc | tocar na opção |
+| Tela cheia | F | automática no primeiro toque |
+| Som liga/desliga | M | |
 | Ver hitboxes | H | |
 
 Controle de videogame (Xbox/PlayStation) também funciona: A pula, X corre.
